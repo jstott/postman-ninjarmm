@@ -1,0 +1,5432 @@
+openapi: 3.0.1
+info:
+  title: Ninja RMM Public API 2.0
+  description: Ninja RMM Public API documentation. <br><br>See also:<br> <a href="https://resources.ninjarmm.com/API/Ninja+RMM+Public+API+v2.0.5+Device+Filter+Syntax.pdf">Device Filter syntax</a><br><a href="https://resources.ninjarmm.com/API/Ninja+RMM+Public+API+v2.0.5+Webhooks.pdf">Webhooks</a>
+  contact:
+    email: api@ninjarmm.com
+  version: 2.0.5-draft
+security:
+- oauth2:
+  - monitoring
+  - management
+  - control
+- sessionKey:
+  - monitoring
+  - management
+  - control
+tags:
+- name: system
+  description: Core system Entities and Resources
+- name: organization
+  description: Organizations
+- name: devices
+  description: Devices
+- name: groups
+  description: Groups/Search
+- name: queries
+  description: Queries
+- name: management
+  description: Management
+paths:
+  /v2/alert/{uid}:
+    delete:
+      tags:
+      - management
+      summary: Reset alert/condition
+      description: Resets alert/condition by UID
+      operationId: resetAlert
+      parameters:
+      - name: uid
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+  /v2/devices/approval/{mode}:
+    post:
+      tags:
+      - management
+      summary: Approve/Reject devices
+      description: Approve or reject devices that are waiting for approval
+      operationId: nodeApprovalOperation
+      parameters:
+      - name: mode
+        in: path
+        required: true
+        schema:
+          type: string
+          description: Approval action to perform
+          enum:
+          - APPROVE
+          - REJECT
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceIDList'
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+  /v2/organizations:
+    get:
+      tags:
+      - system
+      summary: List organizations
+      description: Returns list of organizations (Brief mode)
+      operationId: getOrganizations
+      parameters:
+      - name: pageSize
+        in: query
+        description: Limit number of organizations to return
+        schema:
+          type: integer
+          format: int32
+      - name: after
+        in: query
+        description: Last Organization Identifier from previous page
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organization'
+    post:
+      tags:
+      - management
+      summary: Create new organization
+      description: |-
+        Creates new organization with optional list of locations and policy mappings.
+        Template organization ID can be specified to copy various settings
+      operationId: createOrganization
+      parameters:
+      - name: templateOrganizationId
+        in: query
+        schema:
+          type: integer
+          description: Model/Template organization to copy settings from
+          format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrganizationWithLocationsAndPolicyAssignmentsModel'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationDetailed'
+  /v2/alert/{uid}/reset:
+    post:
+      tags:
+      - management
+      summary: Reset alert/condition and provide custom data for activity
+      description: Resets alert/condition by UID
+      operationId: resetAlertSetActivityData
+      parameters:
+      - name: uid
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+  /v2/webhook:
+    put:
+      tags:
+      - management
+      summary: Update API Webhook configuration
+      description: Creates or updates Webhook configuration for current application/client
+      operationId: configureWebhook
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookConfiguration'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+    delete:
+      tags:
+      - management
+      summary: Remove Webhook API channel
+      description: Creates or updates PSA configuration based on client
+      operationId: disableWebhook
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+  /v2/attachment/{id}:
+    get:
+      tags:
+      - system
+      summary: Retrieve attachment
+      description: Returns attachment (image, document)
+      operationId: getAttachment
+      parameters:
+      - name: id
+        in: path
+        description: Attachment identifier
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+  /v2/device/{id}:
+    get:
+      tags:
+      - devices
+      summary: Device details
+      description: Returns device details
+      operationId: getDevice
+      parameters:
+      - name: id
+        in: path
+        description: Device identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: Device information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+    patch:
+      tags:
+      - management
+      summary: Update device information
+      description: Change device friendly name, user data, etc.
+      operationId: updateDevice
+      parameters:
+      - name: id
+        in: path
+        description: Device identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceMutableProperties'
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+      security:
+      - oauth2:
+        - management
+  /v2/device/{id}/script/run:
+    post:
+      tags:
+      - management
+      summary: Run script or built-in action
+      description: Run script or built-in action on a device
+      operationId: runScriptOnDevice
+      parameters:
+      - name: id
+        in: path
+        description: Device identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunScriptRequest'
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+  /v2/device/{id}/activities:
+    get:
+      tags:
+      - devices
+      summary: Device activities
+      description: Returns activity log for device
+      operationId: getDeviceActivities
+      parameters:
+      - name: id
+        in: path
+        description: Device identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - name: olderThan
+        in: query
+        description: Return activities recorded that are newer than specified activity
+          ID
+        schema:
+          type: integer
+          format: int32
+      - name: newerThan
+        in: query
+        description: Return activities recorded that are older than specified activity
+          ID
+        schema:
+          type: integer
+          format: int32
+      - name: activityType
+        in: query
+        description: Return activities of type
+        schema:
+          type: string
+      - name: status
+        in: query
+        description: Return activities with status(es)
+        schema:
+          type: string
+      - name: seriesUid
+        in: query
+        description: Return activities related to alert (series)
+        schema:
+          type: string
+      - name: pageSize
+        in: query
+        description: Limit number of activities to return
+        schema:
+          maximum: 1000
+          minimum: 10
+          type: integer
+          format: int32
+          default: 200
+      - name: lang
+        in: query
+        description: Language tag
+        schema:
+          type: string
+      - name: tz
+        in: query
+        description: Time Zone
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeActivitiesResponse'
+  /v2/device/{id}/scripting/options:
+    get:
+      tags:
+      - management
+      summary: Device scripting options
+      description: Returns scripting options (built-in actions, custom scripts) available
+        for device
+      operationId: requestScriptingOptions
+      parameters:
+      - name: id
+        in: path
+        description: Device identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - name: lang
+        in: query
+        description: Language
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceScriptingOptions'
+  /v2/device/{id}/reboot/{mode}:
+    post:
+      tags:
+      - management
+      summary: Reboot device
+      description: Sends a command to restart the computer
+      operationId: rebootDevices
+      parameters:
+      - name: id
+        in: path
+        description: Device identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - name: mode
+        in: path
+        description: Reboot mode
+        required: true
+        schema:
+          type: string
+          enum:
+          - NORMAL
+          - FORCED
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+  /v2/device/{id}/disks:
+    get:
+      tags:
+      - devices
+      summary: Device disk drives
+      description: Returns device disks' details
+      operationId: getDeviceDiskDrives
+      parameters:
+      - name: id
+        in: path
+        description: Device identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiskDrive'
+  /v2/device/{id}/processors:
+    get:
+      tags:
+      - devices
+      summary: Device processors
+      description: Returns list of device Processor details
+      operationId: getDeviceProcessors
+      parameters:
+      - name: id
+        in: path
+        description: Device identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Processor'
+  /v2/device/{id}/software:
+    get:
+      tags:
+      - devices
+      summary: Device software inventory
+      description: Returns list of software installed on device
+      operationId: getDeviceSoftware
+      parameters:
+      - name: id
+        in: path
+        description: Device identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Application'
+  /v2/device/{id}/last-logged-on-user:
+    get:
+      tags:
+      - devices
+      summary: Last logged-on user information
+      description: Returns username that was last to login to device
+      operationId: getDeviceLastLoggedOnUser
+      parameters:
+      - name: id
+        in: path
+        description: Device identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoggedOnUser'
+      security:
+      - oauth2:
+        - monitoring
+  /v2/device/{id}/os-patches:
+    get:
+      tags:
+      - devices
+      summary: OS Patches
+      description: Returns list of pending/rejected/approved OS patches for device
+      operationId: getDevicePendingFailedRejectedOSPatches
+      parameters:
+      - name: id
+        in: path
+        description: Device identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - name: status
+        in: query
+        description: Patch Status filter
+        schema:
+          type: string
+      - name: type
+        in: query
+        description: Patch Type filter
+        schema:
+          type: string
+      - name: severity
+        in: query
+        description: Patch Severity filter
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OSPatch'
+  /v2/device/{id}/os-patch-installs:
+    get:
+      tags:
+      - devices
+      summary: OS Patch installation report for device
+      description: Returns patch installation history records (successful and failed)
+        for device
+      operationId: getDeviceInstalledOSPatches
+      parameters:
+      - name: id
+        in: path
+        description: Device identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - name: status
+        in: query
+        description: Patch Status filter (FAILED, INSTALLED)
+        schema:
+          type: string
+      - name: installedBefore
+        in: query
+        description: Include patches installed before specified date
+        schema:
+          type: string
+      - name: installedAfter
+        in: query
+        description: Include patches installed after specified date
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OSPatch'
+  /v2/device/{id}/software-patches:
+    get:
+      tags:
+      - devices
+      summary: Pending, Failed and Rejected Software patches for device
+      description: Returns list of 3rd party Software patches for a device (for which
+        there were no installation attempts)
+      operationId: getDevicePendingFailedRejectedSoftwarePatches
+      parameters:
+      - name: id
+        in: path
+        description: Device identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - name: status
+        in: query
+        description: Patch Status filter
+        schema:
+          type: string
+      - name: productIdentifier
+        in: query
+        description: Product Identifier
+        schema:
+          type: string
+      - name: type
+        in: query
+        description: Patch Type filter
+        schema:
+          type: string
+      - name: impact
+        in: query
+        description: Patch Impact filter
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SoftwarePatch'
+  /v2/device/{id}/volumes:
+    get:
+      tags:
+      - devices
+      summary: Device storage volumes
+      description: Returns device volumes' details
+      operationId: getDeviceVolumes
+      parameters:
+      - name: id
+        in: path
+        description: Device identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Volume'
+  /v2/device/{id}/software-patch-installs:
+    get:
+      tags:
+      - devices
+      summary: Software Patch history for device
+      description: Returns 3rd party software patch installation history records for
+        device (successful and failed)
+      operationId: getDeviceInstalledSoftwarePatches
+      parameters:
+      - name: id
+        in: path
+        description: Device identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - name: type
+        in: query
+        description: Patch Type filter
+        schema:
+          type: string
+      - name: impact
+        in: query
+        description: Patch Impact filter
+        schema:
+          type: string
+      - name: status
+        in: query
+        description: Patch Status filter
+        schema:
+          type: string
+      - name: productIdentifier
+        in: query
+        description: Product Identifier
+        schema:
+          type: string
+      - name: installedBefore
+        in: query
+        description: Include patches installed before specified date
+        schema:
+          type: string
+      - name: installedAfter
+        in: query
+        description: Include patches installed after specified date
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SoftwarePatch'
+  /v2/device/{id}/alerts:
+    get:
+      tags:
+      - devices
+      summary: Device alerts (triggered conditions)
+      description: Returns list of active alerts (triggered conditions) for device
+      operationId: getDeviceAlerts
+      parameters:
+      - name: id
+        in: path
+        description: Device identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - name: lang
+        in: query
+        schema:
+          type: string
+          description: Language tag
+      - name: tz
+        in: query
+        description: Time Zone
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Alert'
+  /v2/device/{id}/jobs:
+    get:
+      tags:
+      - devices
+      summary: Device currently running (active) jobs
+      description: Returns currently running jobs for device
+      operationId: getDeviceActiveJobs
+      parameters:
+      - name: id
+        in: path
+        description: Device identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - name: lang
+        in: query
+        schema:
+          type: string
+          description: Language tag
+      - name: tz
+        in: query
+        description: Time Zone
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Job'
+  /v2/device/{id}/windows-services:
+    get:
+      tags:
+      - devices
+      summary: Windows services
+      description: Returns list of Windows Services and their statuses
+      operationId: getDeviceServices
+      parameters:
+      - name: id
+        in: path
+        description: Device identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - name: name
+        in: query
+        description: Service name
+        schema:
+          type: string
+      - name: state
+        in: query
+        description: Service state
+        schema:
+          type: string
+          enum:
+          - UNKNOWN
+          - STOPPED
+          - START_PENDING
+          - RUNNING
+          - STOP_PENDING
+          - PAUSE_PENDING
+          - PAUSED
+          - CONTINUE_PENDING
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WindowsService'
+  /v2/device/{id}/dashboard-url:
+    get:
+      tags:
+      - management
+      summary: Device link
+      description: Returns link to device
+      operationId: getDeviceLink
+      parameters:
+      - name: id
+        in: path
+        description: Device identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - name: redirect
+        in: query
+        description: Return redirect response
+        schema:
+          type: boolean
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceLink'
+  /v2/device/{id}/windows-service/{serviceId}/configure:
+    post:
+      tags:
+      - management
+      summary: Modify Windows Service configuration
+      description: Configures Windows Service startup settings
+      operationId: setWindowsServiceConfiguration
+      parameters:
+      - name: id
+        in: path
+        description: Device identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - name: serviceId
+        in: path
+        description: Service identifier
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WindowsServiceConfiguration'
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+  /v2/device/{id}/windows-service/{serviceId}/control:
+    post:
+      tags:
+      - management
+      summary: Windows service control
+      description: Start/Stop/Restart Windows Service on a device
+      operationId: controlWindowsService
+      parameters:
+      - name: id
+        in: path
+        description: Device identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - name: serviceId
+        in: path
+        description: Service identifier
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WindowsServiceControlRequest'
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+  /v2/group/{id}/device-ids:
+    get:
+      tags:
+      - groups
+      summary: Group members
+      description: Returns list of device identifiers that match group criteria
+      operationId: getGroupDeviceIds
+      parameters:
+      - name: id
+        in: path
+        description: Group identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - name: refresh
+        in: query
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: integer
+                  format: int32
+  /v2/organization/{id}/locations/{locationId}:
+    patch:
+      tags:
+      - management
+      summary: Update location
+      description: Change location name, address, description, custom data
+      operationId: updateLocation
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - name: locationId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationModel'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+  /v2/organization/{id}/devices:
+    get:
+      tags:
+      - organization
+      summary: Organization devices
+      description: Returns list of devices for organization
+      operationId: getOrganizationDevices
+      parameters:
+      - name: id
+        in: path
+        description: Organization identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - name: pageSize
+        in: query
+        description: Limit number of devices to return
+        schema:
+          type: integer
+          format: int32
+      - name: after
+        in: query
+        description: Last Node ID from previous page
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NodeWithDetailedReferences'
+  /v2/organization/{id}/locations:
+    get:
+      tags:
+      - organization
+      summary: Organization locations
+      description: Returns list of locations for organization
+      operationId: getOrganizationLocations
+      parameters:
+      - name: id
+        in: path
+        description: Organization identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Location'
+    post:
+      tags:
+      - management
+      summary: Add new location to organization
+      description: Creates new location for organization
+      operationId: createLocationForOrganization
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationModel'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+  /v2/organization/{id}:
+    get:
+      tags:
+      - organization
+      summary: Organization information
+      description: Returns organization details (policy mappings, locations)
+      operationId: getOrganization
+      parameters:
+      - name: id
+        in: path
+        description: Organization identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationDetailed'
+    patch:
+      tags:
+      - management
+      summary: Update organization
+      description: Change organization name, description and policy mappings
+      operationId: updateOrganization
+      parameters:
+      - name: id
+        in: path
+        description: Organization identifier
+        required: true
+        schema:
+          type: integer
+          format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrganizationModel'
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+  /v2/organization/{id}/policies:
+    put:
+      tags:
+      - management
+      summary: Change organization policy mappings
+      description: Update policy assignment for node role(s). Returns list of affected
+        device IDs
+      operationId: updateNodeRolePolicyAssignmentForOrganization
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/NodeRolePolicyAssignment'
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  type: integer
+                  format: int32
+  /v2/organization/{id}/location/{location_id}/installer/{installer_type}:
+    get:
+      tags:
+      - management
+      summary: Generate installer
+      description: Generates and returns URL for installer for specified organization/location
+      operationId: getInstallerForLocation
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - name: location_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      - name: installer_type
+        in: path
+        required: true
+        schema:
+          type: string
+          enum:
+          - WINDOWS_MSI
+          - MAC_DMG
+          - MAC_PKG
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Link'
+  /v2/organization/{id}/end-users:
+    get:
+      tags:
+      - organization
+      summary: List users
+      description: Returns list of end-users for organization
+      operationId: getEndUsers
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+  /v2/queries/antivirus-threats:
+    get:
+      tags:
+      - queries
+      summary: Antivirus threats report
+      description: Returns list of antivirus threats
+      operationId: getAntivirusThreats
+      parameters:
+      - name: df
+        in: query
+        description: Device filter
+        schema:
+          type: string
+      - name: ts
+        in: query
+        description: Monitoring timestamp filter
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        description: Cursor name
+        schema:
+          type: string
+      - name: pageSize
+        in: query
+        description: Limit number of records per page
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AntivirusThreatsReport'
+  /v2/queries/operating-systems:
+    get:
+      tags:
+      - queries
+      summary: Operating systems report
+      description: Returns operating systems' for devices
+      operationId: getOperatingSystems
+      parameters:
+      - name: df
+        in: query
+        description: Device filter
+        schema:
+          type: string
+      - name: ts
+        in: query
+        description: Monitoring timestamp filter
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        description: Cursor name
+        schema:
+          type: string
+      - name: pageSize
+        in: query
+        description: Limit number of records per page
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperatingSystemsReport'
+  /v2/queries/processors:
+    get:
+      tags:
+      - queries
+      summary: Processor report
+      description: Returns list of processors
+      operationId: getProcessors
+      parameters:
+      - name: df
+        in: query
+        description: Device filter
+        schema:
+          type: string
+      - name: ts
+        in: query
+        description: Monitoring timestamp filter
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        description: Cursor name
+        schema:
+          type: string
+      - name: pageSize
+        in: query
+        description: Limit number of records per page
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessorReport'
+  /v2/queries/volumes:
+    get:
+      tags:
+      - queries
+      summary: Disk volumes report
+      description: Returns list of disk volumes
+      operationId: getVolumes
+      parameters:
+      - name: df
+        in: query
+        description: Device filter
+        schema:
+          type: string
+      - name: ts
+        in: query
+        description: Monitoring timestamp filter
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        description: Cursor name
+        schema:
+          type: string
+      - name: pageSize
+        in: query
+        description: Limit number of records per page
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VolumesReport'
+  /v2/queries/disks:
+    get:
+      tags:
+      - queries
+      summary: Disk drives report
+      description: Returns list of physical disks
+      operationId: getDiskDrives
+      parameters:
+      - name: df
+        in: query
+        description: Device filter
+        schema:
+          type: string
+      - name: ts
+        in: query
+        description: Monitoring timestamp filter
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        description: Cursor name
+        schema:
+          type: string
+      - name: pageSize
+        in: query
+        description: Limit number of records per page
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiskDriveReport'
+  /v2/queries/computer-systems:
+    get:
+      tags:
+      - queries
+      summary: Computer systems report
+      description: Returns computer systems information for devices
+      operationId: getComputerSystems
+      parameters:
+      - name: df
+        in: query
+        description: Device filter
+        schema:
+          type: string
+      - name: ts
+        in: query
+        description: Monitoring timestamp filter
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        description: Cursor name
+        schema:
+          type: string
+      - name: pageSize
+        in: query
+        description: Limit number of records per page
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComputerSystemsReport'
+  /v2/queries/device-health:
+    get:
+      tags:
+      - queries
+      summary: Device health report
+      description: Returns list of device health summary records
+      operationId: getDeviceHealthReport
+      parameters:
+      - name: df
+        in: query
+        description: Device filter
+        schema:
+          type: string
+      - name: health
+        in: query
+        description: Health status filter
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        description: Cursor name
+        schema:
+          type: string
+      - name: pageSize
+        in: query
+        description: Limit number of records per page
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceHealthReport'
+  /v2/queries/software:
+    get:
+      tags:
+      - queries
+      summary: Software inventory
+      description: Returns list software installed on devices
+      operationId: getSoftware
+      parameters:
+      - name: df
+        in: query
+        description: Device filter
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        description: Cursor name
+        schema:
+          type: string
+      - name: pageSize
+        in: query
+        description: Limit number of records per page
+        schema:
+          type: integer
+          format: int32
+      - name: installedBefore
+        in: query
+        description: Include software installed before specified date
+        schema:
+          type: string
+      - name: installedAfter
+        in: query
+        description: Include software installed after specified date
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SoftwareReport'
+  /v2/queries/os-patches:
+    get:
+      tags:
+      - queries
+      summary: Pending, Failed and Rejected OS patches report
+      description: Returns list of OS patches for which there were no installation
+        attempts
+      operationId: getPendingFailedRejectedOSPatches
+      parameters:
+      - name: df
+        in: query
+        description: Device filter
+        schema:
+          type: string
+      - name: ts
+        in: query
+        description: Monitoring timestamp filter
+        schema:
+          type: string
+      - name: status
+        in: query
+        description: Patch Status filter
+        schema:
+          type: string
+      - name: type
+        in: query
+        description: Patch Type filter
+        schema:
+          type: string
+      - name: severity
+        in: query
+        description: Patch Severity filter
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        description: Cursor name
+        schema:
+          type: string
+      - name: pageSize
+        in: query
+        description: Limit number of records per page
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OSPatchReport'
+  /v2/queries/os-patch-installs:
+    get:
+      tags:
+      - queries
+      summary: OS Patch installation report
+      description: Returns patch installation history records (successful and failed)
+      operationId: getInstalledOSPatches
+      parameters:
+      - name: df
+        in: query
+        description: Device filter
+        schema:
+          type: string
+      - name: status
+        in: query
+        description: Patch Status filter (FAILED, INSTALLED)
+        schema:
+          type: string
+      - name: installedBefore
+        in: query
+        description: Include patches installed before specified date
+        schema:
+          type: string
+      - name: installedAfter
+        in: query
+        description: Include patches installed after specified date
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        description: Cursor name
+        schema:
+          type: string
+      - name: pageSize
+        in: query
+        description: Limit number of records per page
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OSPatchReport'
+  /v2/queries/software-patches:
+    get:
+      tags:
+      - queries
+      summary: Pending, Failed and Rejected Software patches report
+      description: Returns list of 3rd party Software patches for which there were
+        no installation attempts
+      operationId: getPendingFailedRejectedSoftwarePatches
+      parameters:
+      - name: df
+        in: query
+        description: Device filter
+        schema:
+          type: string
+      - name: ts
+        in: query
+        description: Monitoring timestamp filter
+        schema:
+          type: string
+      - name: status
+        in: query
+        description: Patch Status filter
+        schema:
+          type: string
+      - name: productIdentifier
+        in: query
+        description: Product Identifier
+        schema:
+          type: string
+      - name: type
+        in: query
+        description: Patch Type filter
+        schema:
+          type: string
+      - name: impact
+        in: query
+        description: Patch Impact filter
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        description: Cursor name
+        schema:
+          type: string
+      - name: pageSize
+        in: query
+        description: Limit number of records per page
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SoftwarePatchReport'
+  /v2/queries/software-patch-installs:
+    get:
+      tags:
+      - queries
+      summary: Software Patch history report
+      description: Returns 3rd party software patch installation history records (successful
+        and failed)
+      operationId: getInstalledSoftwarePatches
+      parameters:
+      - name: df
+        in: query
+        description: Device filter
+        schema:
+          type: string
+      - name: type
+        in: query
+        description: Patch Type filter
+        schema:
+          type: string
+      - name: impact
+        in: query
+        description: Patch Impact filter
+        schema:
+          type: string
+      - name: status
+        in: query
+        description: Patch Status filter
+        schema:
+          type: string
+      - name: productIdentifier
+        in: query
+        description: Product Identifier
+        schema:
+          type: string
+      - name: installedBefore
+        in: query
+        description: Include patches installed before specified date
+        schema:
+          type: string
+      - name: installedAfter
+        in: query
+        description: Include patches installed after specified date
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        description: Cursor name
+        schema:
+          type: string
+      - name: pageSize
+        in: query
+        description: Limit number of records per page
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SoftwarePatchReport'
+  /v2/queries/raid-controllers:
+    get:
+      tags:
+      - queries
+      summary: RAID controller report
+      description: Returns list of RAID controllers
+      operationId: getRAIDControllerReport
+      parameters:
+      - name: df
+        in: query
+        description: Device filter
+        schema:
+          type: string
+      - name: ts
+        in: query
+        description: Monitoring timestamp filter
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        description: Cursor name
+        schema:
+          type: string
+      - name: pageSize
+        in: query
+        description: Limit number of records per page
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RAIDControllerReport'
+  /v2/queries/raid-drives:
+    get:
+      tags:
+      - queries
+      summary: RAID drive report
+      description: Returns list of drives connected to RAID controllers
+      operationId: getRAIDDriveReport
+      parameters:
+      - name: df
+        in: query
+        description: Device filter
+        schema:
+          type: string
+      - name: ts
+        in: query
+        description: Monitoring timestamp filter
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        description: Cursor name
+        schema:
+          type: string
+      - name: pageSize
+        in: query
+        description: Limit number of records per page
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RAIDDriveReport'
+  /v2/queries/windows-services:
+    get:
+      tags:
+      - queries
+      summary: Windows services report
+      description: Returns list of Windows Services and their statuses
+      operationId: getWindowsServicesReport
+      parameters:
+      - name: df
+        in: query
+        description: Device filter
+        schema:
+          type: string
+      - name: name
+        in: query
+        description: Service name
+        schema:
+          type: string
+      - name: state
+        in: query
+        description: Service state
+        schema:
+          type: string
+          enum:
+          - UNKNOWN
+          - STOPPED
+          - START_PENDING
+          - RUNNING
+          - STOP_PENDING
+          - PAUSE_PENDING
+          - PAUSED
+          - CONTINUE_PENDING
+      - name: cursor
+        in: query
+        description: Cursor name
+        schema:
+          type: string
+      - name: pageSize
+        in: query
+        description: Limit number of records per page
+        schema:
+          maximum: 10000
+          minimum: 10
+          type: integer
+          format: int32
+          default: 1000
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WindowsServiceReport'
+  /v2/queries/logged-on-users:
+    get:
+      tags:
+      - queries
+      summary: Last logged-on user report
+      description: 'Returns usernames and logon times '
+      operationId: getLastLoggedOnUsersReport
+      parameters:
+      - name: df
+        in: query
+        description: Device filter
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        description: Cursor name
+        schema:
+          type: string
+      - name: pageSize
+        in: query
+        description: Limit number of records per page
+        schema:
+          maximum: 10000
+          minimum: 10
+          type: integer
+          format: int32
+          default: 1000
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoggedOnUsersReport'
+  /v2/queries/antivirus-status:
+    get:
+      tags:
+      - queries
+      summary: Antivirus status report
+      description: Returns list of statues of antivirus software installed on devices
+      operationId: getAntivirusStatusReport
+      parameters:
+      - name: df
+        in: query
+        description: Device filter
+        schema:
+          type: string
+      - name: ts
+        in: query
+        description: Monitoring timestamp filter
+        schema:
+          type: string
+      - name: productState
+        in: query
+        description: Product State filter
+        schema:
+          type: string
+      - name: productName
+        in: query
+        description: Product Name filter
+        schema:
+          type: string
+      - name: cursor
+        in: query
+        description: Cursor name
+        schema:
+          type: string
+      - name: pageSize
+        in: query
+        description: Limit number of records per page
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AntivirusStatusReport'
+  /v2/groups:
+    get:
+      tags:
+      - system
+      summary: List groups (saved searches)
+      description: Returns list of groups
+      operationId: getGroups
+      parameters:
+      - name: lang
+        in: query
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Group'
+  /v2/activities:
+    get:
+      tags:
+      - system
+      summary: List activities
+      description: Returns activity log in reverse chronological order
+      operationId: getActivities
+      parameters:
+      - name: class
+        in: query
+        description: Activity Class (System/Device) filter
+        schema:
+          type: string
+          enum:
+          - SYSTEM
+          - DEVICE
+          - ALL
+          default: ALL
+      - name: before
+        in: query
+        description: Return activities recorded prior to specified date
+        schema:
+          type: string
+      - name: after
+        in: query
+        description: Return activities recorded after to specified date
+        schema:
+          type: string
+      - name: olderThan
+        in: query
+        description: Return activities recorded that are newer than specified activity
+          ID
+        schema:
+          type: integer
+          format: int32
+      - name: newerThan
+        in: query
+        description: Return activities recorded that are older than specified activity
+          ID
+        schema:
+          type: integer
+          format: int32
+      - name: type
+        in: query
+        description: Return activities of type
+        schema:
+          type: string
+      - name: status
+        in: query
+        description: Return activities with status(es)
+        schema:
+          type: string
+      - name: user
+        in: query
+        description: Return activities for user(s)
+        schema:
+          type: string
+      - name: seriesUid
+        in: query
+        description: Return activities related to alert (series)
+        schema:
+          type: string
+      - name: df
+        in: query
+        description: Device filter
+        schema:
+          type: string
+      - name: pageSize
+        in: query
+        description: Limit number of activities to return
+        schema:
+          maximum: 1000
+          minimum: 10
+          type: integer
+          format: int32
+          default: 200
+      - name: lang
+        in: query
+        description: Language tag
+        schema:
+          type: string
+      - name: tz
+        in: query
+        description: Time Zone
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivitiesResponse'
+  /v2/users:
+    get:
+      tags:
+      - system
+      summary: List users
+      description: Returns list of users
+      operationId: getUsers
+      parameters:
+      - name: userType
+        in: query
+        description: User type filter
+        schema:
+          type: string
+          enum:
+          - TECHNICIAN
+          - END_USER
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+  /v2/devices:
+    get:
+      tags:
+      - system
+      summary: List devices
+      description: Returns list of devices (basic node information)
+      operationId: getDevices
+      parameters:
+      - name: df
+        in: query
+        description: Device filter
+        schema:
+          type: string
+      - name: pageSize
+        in: query
+        description: Limit number of devices to return
+        schema:
+          type: integer
+          format: int32
+      - name: after
+        in: query
+        description: Last Node ID from previous page
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NodeWithDetailedReferences'
+  /v2/policies:
+    get:
+      tags:
+      - system
+      summary: List policies
+      description: Returns list of policies
+      operationId: getPolicies
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Policy'
+  /v2/software-products:
+    get:
+      tags:
+      - system
+      summary: List supported 3rd party software
+      description: Returns available software products (3rd party patching)
+      operationId: getSoftwareProducts
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SoftwareProduct'
+  /v2/devices-detailed:
+    get:
+      tags:
+      - system
+      summary: List devices (detailed)
+      description: Returns list of devices with additional information
+      operationId: getDevicesDetailed
+      parameters:
+      - name: df
+        in: query
+        description: Device filter
+        schema:
+          type: string
+      - name: pageSize
+        in: query
+        schema:
+          type: integer
+          description: Limit number of devices to return
+          format: int32
+      - name: after
+        in: query
+        schema:
+          type: integer
+          description: Last Node ID from previous page
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Device'
+  /v2/alerts:
+    get:
+      tags:
+      - system
+      summary: List active alerts (triggered conditions)
+      description: Returns list of active alerts/triggered conditions
+      operationId: getAlerts
+      parameters:
+      - name: sourceType
+        in: query
+        schema:
+          type: string
+          description: Alert Source filter
+      - name: df
+        in: query
+        description: Device filter
+        schema:
+          type: string
+      - name: lang
+        in: query
+        description: Language tag
+        schema:
+          type: string
+      - name: tz
+        in: query
+        description: Time Zone
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Alert'
+  /v2/jobs:
+    get:
+      tags:
+      - system
+      summary: List active jobs
+      description: Returns list of running jobs
+      operationId: getActiveJobs
+      parameters:
+      - name: jobType
+        in: query
+        description: Job Type filter
+        schema:
+          type: string
+      - name: df
+        in: query
+        description: Device filter
+        schema:
+          type: string
+      - name: lang
+        in: query
+        description: Language tag
+        schema:
+          type: string
+      - name: tz
+        in: query
+        description: Time Zone
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Job'
+  /v2/tasks:
+    get:
+      tags:
+      - system
+      summary: List scheduled tasks
+      description: Returns list of registered scheduled tasks
+      operationId: getScheduledTasks
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ScheduledTask'
+  /v2/organizations-detailed:
+    get:
+      tags:
+      - system
+      summary: List organizations (Detailed)
+      description: Returns list of organizations with locations and policy mappings
+      operationId: getOrganizationsDetailed
+      parameters:
+      - name: pageSize
+        in: query
+        description: Limit number of organizations to return
+        schema:
+          type: integer
+          format: int32
+      - name: after
+        in: query
+        description: Last Organization Identifier from previous page
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrganizationDetailed'
+  /v2/locations:
+    get:
+      tags:
+      - system
+      summary: List locations
+      description: Returns flat list of all locations for all organizations
+      operationId: getLocations
+      parameters:
+      - name: pageSize
+        in: query
+        description: Limit number of locations to return
+        schema:
+          type: integer
+          format: int32
+      - name: after
+        in: query
+        description: Last Location Identifier from previous page
+        schema:
+          type: integer
+          format: int32
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LocationWithOrganizationRef'
+  /v2/roles:
+    get:
+      tags:
+      - system
+      summary: List device roles
+      description: Returns list of device roles
+      operationId: getNodeRoles
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NodeRole'
+components:
+  schemas:
+    DeviceIDList:
+      type: object
+      properties:
+        devices:
+          type: array
+          items:
+            type: integer
+            format: int32
+    FeatureSettings:
+      type: object
+      properties:
+        product:
+          type: string
+          description: Configured product code
+        enabled:
+          type: boolean
+          description: Is enabled
+        targets:
+          type: array
+          description: Feature deployment targets
+          items:
+            type: string
+            description: Feature deployment targets
+        options:
+          type: object
+          additionalProperties:
+            type: object
+            description: Feature options
+          description: Feature options
+      description: Feature/product/integration configuration settings
+    Location:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Location name
+        address:
+          type: string
+          description: Address
+        description:
+          type: string
+          description: Description
+        userData:
+          type: object
+          additionalProperties: true
+        tags:
+          type: array
+          description: Tags
+          items:
+            type: string
+            description: Tags
+        fields:
+          type: object
+          additionalProperties:
+            type: object
+            description: Custom Fields
+          description: Custom Fields
+        id:
+          type: integer
+          description: Location identifier
+          format: int32
+      description: List of locations
+    NodeRolePolicyAssignment:
+      type: object
+      properties:
+        nodeRoleId:
+          type: integer
+          description: Node Role Identifier
+          format: int32
+        policyId:
+          type: integer
+          description: Policy Identifier
+          format: int32
+      description: Node role policy assignments
+    OrganizationDetailed:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Organization full name
+        description:
+          type: string
+          description: Organization Description
+        userData:
+          type: object
+          additionalProperties: true
+        nodeApprovalMode:
+          type: string
+          description: Device Approval Mode
+          enum:
+          - AUTOMATIC
+          - MANUAL
+          - REJECT
+        tags:
+          type: array
+          description: Tags
+          items:
+            type: string
+            description: Tags
+        fields:
+          type: object
+          additionalProperties:
+            type: object
+            description: Custom Fields
+          description: Custom Fields
+        id:
+          type: integer
+          description: Organization identifier
+          format: int32
+        locations:
+          type: array
+          description: List of locations
+          items:
+            $ref: '#/components/schemas/Location'
+        policies:
+          type: array
+          description: Node role policy assignments
+          items:
+            $ref: '#/components/schemas/NodeRolePolicyAssignment'
+        settings:
+          $ref: '#/components/schemas/OrganizationSettings'
+    OrganizationSettings:
+      type: object
+      properties:
+        trayicon:
+          $ref: '#/components/schemas/FeatureSettings'
+        splashtop:
+          $ref: '#/components/schemas/FeatureSettings'
+        teamviewer:
+          $ref: '#/components/schemas/FeatureSettings'
+        backup:
+          $ref: '#/components/schemas/FeatureSettings'
+        psa:
+          $ref: '#/components/schemas/FeatureSettings'
+      description: Organization settings
+    LocationModel:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Location name
+        address:
+          type: string
+          description: Address
+        description:
+          type: string
+          description: Description
+        userData:
+          type: object
+          additionalProperties: true
+        tags:
+          type: array
+          description: Tags
+          items:
+            type: string
+            description: Tags
+        fields:
+          type: object
+          additionalProperties:
+            type: object
+            description: Custom Fields
+          description: Custom Fields
+    OrganizationWithLocationsAndPolicyAssignmentsModel:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Organization full name
+        description:
+          type: string
+          description: Organization Description
+        userData:
+          type: object
+          additionalProperties: true
+        nodeApprovalMode:
+          type: string
+          description: Device Approval Mode
+          enum:
+          - AUTOMATIC
+          - MANUAL
+          - REJECT
+        tags:
+          type: array
+          description: Tags
+          items:
+            type: string
+            description: Tags
+        fields:
+          type: object
+          additionalProperties:
+            type: object
+            description: Custom Fields
+          description: Custom Fields
+        locations:
+          type: array
+          description: List of locations
+          items:
+            $ref: '#/components/schemas/LocationModel'
+        policies:
+          type: array
+          description: Node role policy assignments
+          items:
+            $ref: '#/components/schemas/NodeRolePolicyAssignment'
+    WebhookConfiguration:
+      type: object
+      properties:
+        url:
+          type: string
+          description: Callback (WebHook) URL for activity notifications
+        activities:
+          type: object
+          additionalProperties:
+            type: array
+            description: Activity filter
+            items:
+              type: string
+              description: Activity filter
+          description: Activity filter
+        expand:
+          type: array
+          description: Which references to expand in payloads
+          items:
+            type: string
+            description: Which references to expand in payloads
+    AgentDevice:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Device'
+      - type: object
+        properties:
+          os:
+            $ref: '#/components/schemas/OperatingSystem'
+          system:
+            $ref: '#/components/schemas/ComputerSystem'
+          memory:
+            $ref: '#/components/schemas/Memory'
+          processors:
+            type: array
+            description: Processors
+            items:
+              $ref: '#/components/schemas/Processor'
+          volumes:
+            type: array
+            description: Disk Volumes
+            items:
+              $ref: '#/components/schemas/Volume'
+          lastLoggedInUser:
+            type: string
+            description: Username that logged in most recently
+    CloudMonitorDNS:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Device'
+      - type: object
+        properties:
+          enabled:
+            type: boolean
+            description: Is enabled?
+          interval:
+            type: integer
+            description: Monitoring interval (seconds)
+            format: int32
+          timeout:
+            type: integer
+            description: Timeout (seconds)
+            format: int32
+          target:
+            type: string
+            description: Monitoring target (hostname, IP address or URL)
+    CloudMonitorEmailServer:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Device'
+      - type: object
+        properties:
+          enabled:
+            type: boolean
+            description: Is enabled?
+          interval:
+            type: integer
+            description: Monitoring interval (seconds)
+            format: int32
+          timeout:
+            type: integer
+            description: Timeout (seconds)
+            format: int32
+          target:
+            type: string
+            description: SMTP Host (hostname or IP address)
+          smtpPort:
+            type: integer
+            description: SMTP Port
+            format: int32
+          senderEmail:
+            type: string
+            description: Sender's email (FROM)
+          recipientEmail:
+            type: string
+            description: Recipient's email (TO)
+    CloudMonitorHTTP:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Device'
+      - type: object
+        properties:
+          enabled:
+            type: boolean
+            description: Is enabled?
+          interval:
+            type: integer
+            description: Monitoring interval (seconds)
+            format: int32
+          timeout:
+            type: integer
+            description: Timeout (seconds)
+            format: int32
+          target:
+            type: string
+            description: Monitoring target (hostname, IP address or URL)
+    CloudMonitorPing:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Device'
+      - type: object
+        properties:
+          enabled:
+            type: boolean
+            description: Is enabled?
+          interval:
+            type: integer
+            description: Monitoring interval (seconds)
+            format: int32
+          timeout:
+            type: integer
+            description: Timeout (seconds)
+            format: int32
+          target:
+            type: string
+            description: Monitoring target (hostname, IP address or URL)
+    CloudMonitorPortScan:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Device'
+      - type: object
+        properties:
+          enabled:
+            type: boolean
+            description: Is enabled?
+          interval:
+            type: integer
+            description: Monitoring interval (seconds)
+            format: int32
+          timeout:
+            type: integer
+            description: Timeout (seconds)
+            format: int32
+          target:
+            type: string
+            description: Monitoring target (hostname, IP address or URL)
+    ComputerSystem:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name
+        manufacturer:
+          type: string
+          description: Manufacturer
+        model:
+          type: string
+          description: Model
+        biosSerialNumber:
+          type: string
+          description: Bios Serial Number
+        serialNumber:
+          type: string
+          description: Serial Number
+        domain:
+          type: string
+        domainRole:
+          type: string
+        numberOfProcessors:
+          type: integer
+          format: int32
+        totalPhysicalMemory:
+          type: integer
+          format: int64
+        virtualMachine:
+          type: boolean
+        chassisType:
+          type: string
+      description: Computer System (Chassis)
+    Device:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Node (Device) identifier
+          format: int32
+        parentDeviceId:
+          type: integer
+          description: Parent Node identifier
+          format: int32
+        organizationId:
+          type: integer
+          description: Organization identifier
+          format: int32
+        locationId:
+          type: integer
+          description: Location identifier
+          format: int32
+        nodeClass:
+          type: string
+          description: Node Class
+          enum:
+          - WINDOWS_SERVER
+          - WINDOWS_WORKSTATION
+          - LINUX_WORKSTATION
+          - MAC
+          - VMWARE_VM_HOST
+          - VMWARE_VM_GUEST
+          - LINUX_SERVER
+          - MAC_SERVER
+          - CLOUD_MONITOR_TARGET
+          - NMS_SWITCH
+          - NMS_ROUTER
+          - NMS_FIREWALL
+          - NMS_PRIVATE_NETWORK_GATEWAY
+          - NMS_PRINTER
+          - NMS_SCANNER
+          - NMS_DIAL_MANAGER
+          - NMS_WAP
+          - NMS_IPSLA
+          - NMS_COMPUTER
+          - NMS_VM_HOST
+          - NMS_APPLIANCE
+          - NMS_OTHER
+          - NMS_SERVER
+          - NMS_PHONE
+          - NMS_VIRTUAL_MACHINE
+          - NMS_NETWORK_MANAGEMENT_AGENT
+        nodeRoleId:
+          type: integer
+          description: Node Role identifier
+          format: int32
+        rolePolicyId:
+          type: integer
+          description: Node Role policy ID based on organization Policy Mapping
+          format: int32
+        policyId:
+          type: integer
+          description: Assigned policy ID (overrides organization policy mapping)
+          format: int32
+        approvalStatus:
+          type: string
+          description: Approval Status
+          enum:
+          - PENDING
+          - APPROVED
+        offline:
+          type: boolean
+          description: Is Offline?
+        displayName:
+          type: string
+          description: Display Name
+        systemName:
+          type: string
+          description: System Name
+        dnsName:
+          type: string
+          description: DNS Name
+        netbiosName:
+          type: string
+          description: NETBIOS Name
+        created:
+          type: integer
+          description: Created
+          format: int64
+        lastContact:
+          type: integer
+          description: Last Contact
+          format: int64
+        lastUpdate:
+          type: integer
+          description: Last data submission timestamp
+          format: int64
+        userData:
+          type: object
+          additionalProperties: true
+        tags:
+          type: array
+          description: Tags
+          items:
+            type: string
+            description: Tags
+        fields:
+          type: object
+          additionalProperties:
+            type: object
+            description: Custom Fields
+          description: Custom Fields
+        maintenance:
+          $ref: '#/components/schemas/Maintenance'
+        references:
+          $ref: '#/components/schemas/NodeReferences'
+        ipAddresses:
+          type: array
+          description: Device IP addresses
+          items:
+            type: string
+            description: Device IP addresses
+        macAddresses:
+          type: array
+          description: Device MAC addresses
+          items:
+            type: string
+            description: Device MAC addresses
+        publicIP:
+          type: string
+          description: Device Public IP Address
+        notes:
+          type: array
+          description: Device Notes
+          items:
+            $ref: '#/components/schemas/Note'
+        deviceType:
+          type: string
+      discriminator:
+        propertyName: deviceType
+    Maintenance:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Maintenance mode status
+          enum:
+          - PENDING
+          - IN_MAINTENANCE
+          - FAILED
+        start:
+          type: integer
+          description: Maintenance mode start time
+          format: int64
+        end:
+          type: integer
+          description: Maintenance mode end time
+          format: int64
+      description: Maintenance mode status
+    Memory:
+      type: object
+      properties:
+        capacity:
+          type: integer
+          description: Capacity
+          format: int64
+      description: Memory information
+    NMSServer:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Device'
+    NMSTarget:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Device'
+    NodeReferences:
+      type: object
+      properties:
+        organization:
+          $ref: '#/components/schemas/Organization'
+        location:
+          $ref: '#/components/schemas/Location'
+        rolePolicy:
+          $ref: '#/components/schemas/Policy'
+        policy:
+          $ref: '#/components/schemas/Policy'
+        role:
+          $ref: '#/components/schemas/NodeRole'
+      description: Expanded entity references
+    NodeRole:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Device Role identifier
+          format: int32
+        name:
+          type: string
+          description: Name
+        description:
+          type: string
+          description: Description
+        nodeClass:
+          type: string
+          description: Node Class
+          enum:
+          - WINDOWS_SERVER
+          - WINDOWS_WORKSTATION
+          - LINUX_WORKSTATION
+          - MAC
+          - VMWARE_VM_HOST
+          - VMWARE_VM_GUEST
+          - LINUX_SERVER
+          - MAC_SERVER
+          - CLOUD_MONITOR_TARGET
+          - NMS_SWITCH
+          - NMS_ROUTER
+          - NMS_FIREWALL
+          - NMS_PRIVATE_NETWORK_GATEWAY
+          - NMS_PRINTER
+          - NMS_SCANNER
+          - NMS_DIAL_MANAGER
+          - NMS_WAP
+          - NMS_IPSLA
+          - NMS_COMPUTER
+          - NMS_VM_HOST
+          - NMS_APPLIANCE
+          - NMS_OTHER
+          - NMS_SERVER
+          - NMS_PHONE
+          - NMS_VIRTUAL_MACHINE
+          - NMS_NETWORK_MANAGEMENT_AGENT
+        custom:
+          type: boolean
+          description: Is custom node role?
+        chassisType:
+          type: string
+          description: Chassis Type
+          enum:
+          - UNKNOWN
+          - DESKTOP
+          - LAPTOP
+        created:
+          type: integer
+          description: Date created
+          format: int64
+        tags:
+          type: array
+          description: Tags
+          items:
+            type: string
+            description: Tags
+        fields:
+          type: object
+          additionalProperties:
+            type: object
+            description: Custom Fields
+          description: Custom Fields
+    Note:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Note text
+      description: Device Notes
+    OperatingSystem:
+      type: object
+      properties:
+        manufacturer:
+          type: string
+          description: Manufacturer
+        name:
+          type: string
+          description: Name
+        architecture:
+          type: string
+          description: Architecture
+        lastBootTime:
+          type: integer
+          description: Last boot time
+          format: int64
+        buildNumber:
+          type: string
+          description: Build number
+        releaseId:
+          type: string
+          description: Release ID
+        servicePackMajorVersion:
+          type: integer
+          description: Service Pack Major Version
+          format: int32
+        servicePackMinorVersion:
+          type: integer
+          description: Service Pack Minor Version
+          format: int32
+        locale:
+          type: string
+          description: Locale
+        language:
+          type: string
+          description: Language
+        needsReboot:
+          type: boolean
+          description: Operating system has pending reboot requests
+      description: Operating System
+    Organization:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Organization full name
+        description:
+          type: string
+          description: Organization Description
+        userData:
+          type: object
+          additionalProperties: true
+        nodeApprovalMode:
+          type: string
+          description: Device Approval Mode
+          enum:
+          - AUTOMATIC
+          - MANUAL
+          - REJECT
+        tags:
+          type: array
+          description: Tags
+          items:
+            type: string
+            description: Tags
+        fields:
+          type: object
+          additionalProperties:
+            type: object
+            description: Custom Fields
+          description: Custom Fields
+        id:
+          type: integer
+          description: Organization identifier
+          format: int32
+      description: Organization
+    Policy:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Policy identifier
+          format: int32
+        parentPolicyId:
+          type: integer
+          description: Parent Policy identifier
+          format: int32
+        name:
+          type: string
+          description: Name
+        description:
+          type: string
+          description: Description
+        nodeClass:
+          type: string
+          description: Node Class
+          enum:
+          - WINDOWS_SERVER
+          - WINDOWS_WORKSTATION
+          - LINUX_WORKSTATION
+          - MAC
+          - VMWARE_VM_HOST
+          - VMWARE_VM_GUEST
+          - LINUX_SERVER
+          - MAC_SERVER
+          - CLOUD_MONITOR_TARGET
+          - NMS_SWITCH
+          - NMS_ROUTER
+          - NMS_FIREWALL
+          - NMS_PRIVATE_NETWORK_GATEWAY
+          - NMS_PRINTER
+          - NMS_SCANNER
+          - NMS_DIAL_MANAGER
+          - NMS_WAP
+          - NMS_IPSLA
+          - NMS_COMPUTER
+          - NMS_VM_HOST
+          - NMS_APPLIANCE
+          - NMS_OTHER
+          - NMS_SERVER
+          - NMS_PHONE
+          - NMS_VIRTUAL_MACHINE
+          - NMS_NETWORK_MANAGEMENT_AGENT
+        updated:
+          type: integer
+          description: Last update timestamp
+          format: int64
+        nodeClassDefault:
+          type: boolean
+          description: Is Default Policy for Node Class
+        tags:
+          type: array
+          description: Tags
+          items:
+            type: string
+            description: Tags
+        fields:
+          type: object
+          additionalProperties:
+            type: object
+            description: Custom Fields
+          description: Custom Fields
+      description: Assigned policy ID (overrides organization policy mapping)
+    Processor:
+      type: object
+      properties:
+        architecture:
+          type: string
+          description: Architecture
+        maxClockSpeed:
+          type: integer
+          description: Max Clock Speed
+          format: int64
+        clockSpeed:
+          type: integer
+          description: Current Clock Speed
+          format: int64
+        name:
+          type: string
+          description: Name
+        numCores:
+          type: integer
+          description: Number of Cores
+          format: int32
+        numLogicalCores:
+          type: integer
+          description: Number of Logical Cores]
+          format: int32
+      description: Processors
+    VMGuest:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Device'
+      - type: object
+        properties:
+          files:
+            type: string
+            description: Guest VM Files
+          fullName:
+            type: string
+            description: Full Name
+          lastBootTime:
+            type: integer
+            description: Last VM Boot Time
+            format: int64
+          memorySize:
+            type: integer
+            description: VM Memory size (bytes)
+            format: int64
+          coresPerSocket:
+            type: integer
+            description: Number of Cores per Socket
+            format: int32
+          cpuCores:
+            type: integer
+            description: Total Number of CPU Cores
+            format: int32
+          powerState:
+            type: string
+            description: Current power state
+          toolsInstallType:
+            type: string
+            description: Guest tools installation type
+          toolStatus:
+            type: string
+            description: Guest tools status
+          toolsVersion:
+            type: string
+            description: Guest tools version
+          guestOSFullName:
+            type: string
+            description: Guest OS full name
+          guestOSFamily:
+            type: string
+            description: Guest OS family
+          guestOSId:
+            type: string
+            description: Guest OS identifier
+          toolsVersionStatus:
+            type: string
+            description: Guest tools version status
+          snapshotCount:
+            type: integer
+            description: Number of snapshots
+            format: int32
+          snapshotTotalSize:
+            type: integer
+            description: Total snapshot size (bytes)
+            format: int64
+    VMHost:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Device'
+      - type: object
+        properties:
+          cpuMhz:
+            type: integer
+            description: CPU Frequency
+            format: int64
+          cpuModel:
+            type: string
+            description: CPU Model
+          htActive:
+            type: boolean
+            description: Is Hyper-Threading active?
+          htAvailable:
+            type: boolean
+            description: Is Hyper-Threading available?
+          lastBootTime:
+            type: integer
+            description: Last toot time
+            format: int64
+          memorySize:
+            type: integer
+            description: Total memory size (bytes)
+            format: int64
+          model:
+            type: string
+            description: Model
+          name:
+            type: string
+            description: Name
+          cpuCores:
+            type: integer
+            description: Number of CPU Cores
+            format: int32
+          cpuPackages:
+            type: integer
+            description: Number of CPUs
+            format: int32
+          cpuThreads:
+            type: integer
+            description: Total number of logical CPU cores
+            format: int32
+          serviceTag:
+            type: string
+            description: Service Tag
+          vendor:
+            type: string
+            description: Vendor
+          releaseName:
+            type: string
+            description: Release Name
+          version:
+            type: string
+            description: Version
+          buildNumber:
+            type: string
+            description: Build number
+    Volume:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name
+        driveLetter:
+          type: string
+          description: Drive Letter
+        label:
+          type: string
+          description: Volume Label
+        deviceType:
+          type: string
+          description: Device Type
+        fileSystem:
+          type: string
+          description: File System Type
+        autoMount:
+          type: boolean
+          description: Automatically Mounted
+        compressed:
+          type: boolean
+          description: Compressed
+        capacity:
+          type: integer
+          description: Capacity (bytes)
+          format: int64
+        freeSpace:
+          type: integer
+          description: Free Space (bytes)
+          format: int64
+        serialNumber:
+          type: string
+          description: Serial Number
+      description: Disk Volumes
+    RunScriptRequest:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Type
+          enum:
+          - ACTION
+          - SCRIPT
+        id:
+          type: integer
+          description: Script identifier
+          format: int32
+        uid:
+          type: string
+          description: Built-in action identifier
+          format: uuid
+        parameters:
+          type: string
+          description: Action/Script parameters
+        runAs:
+          type: string
+          description: Credential role/identifier
+    Activity:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Activity identifier
+          format: int32
+        activityTime:
+          type: integer
+          description: Activity timestamp
+          format: int64
+        deviceId:
+          type: integer
+          description: Device identifier
+          format: int32
+        severity:
+          type: string
+          description: Severity
+          enum:
+          - NONE
+          - MINOR
+          - MODERATE
+          - MAJOR
+          - CRITICAL
+        priority:
+          type: string
+          description: Priority
+          enum:
+          - NONE
+          - LOW
+          - MEDIUM
+          - HIGH
+        seriesUid:
+          type: string
+          description: Activity series UID (job/condition UID)
+          format: uuid
+        activityType:
+          type: string
+          description: Activity type code
+          enum:
+          - ACTIONSET
+          - ACTION
+          - CONDITION
+          - CONDITION_ACTIONSET
+          - CONDITION_ACTION
+          - ANTIVIRUS
+          - PATCH_MANAGEMENT
+          - TEAMVIEWER
+          - MONITOR
+          - SYSTEM
+          - COMMENT
+          - SHADOWPROTECT
+          - IMAGEMANAGER
+          - HELP_REQUEST
+          - SOFTWARE_PATCH_MANAGEMENT
+          - SPLASHTOP
+          - CLOUDBERRY
+          - CLOUDBERRY_BACKUP
+          - SCHEDULED_TASK
+          - RDP
+          - SCRIPTING
+          - SECURITY
+          - REMOTE_TOOLS
+          - VIRTUALIZATION
+          - PSA
+        statusCode:
+          type: string
+          description: Activity status code
+          enum:
+          - START_REQUESTED
+          - STARTED
+          - IN_PROCESS
+          - COMPLETED
+          - CANCEL_REQUESTED
+          - CANCELLED
+          - TRIGGERED
+          - RESET
+          - ACKNOWLEDGED
+          - DISABLED
+          - EVALUATION_FAILURE
+          - CLIENT_CREATED
+          - CLIENT_UPDATED
+          - CLIENT_DELETED
+          - POLICY_CREATED
+          - POLICY_UPDATED
+          - POLICY_DELETED
+          - NODE_CREATED
+          - NODE_UPDATED
+          - NODE_DELETED
+          - LOCATION_CREATED
+          - LOCATION_UPDATED
+          - LOCATION_DELETED
+          - NODE_ACCESS_GRANTED
+          - NODE_ACCESS_DENIED
+          - NODE_REGISTRATION_REJECTED
+          - APP_USER_CREATED
+          - APP_USER_UPDATED
+          - APP_USER_DELETED
+          - APP_USER_LOGGED_IN
+          - APP_USER_LOGGED_OUT
+          - APP_USER_MFA_SETUP
+          - APP_USER_MFA_DELETED
+          - END_USER_CREATED
+          - END_USER_UPDATED
+          - END_USER_DELETED
+          - END_USER_LOGGED_IN
+          - END_USER_LOGGED_OUT
+          - END_USER_MFA_SETUP
+          - END_USER_MFA_DELETED
+          - TICKET_TEMPLATE_CREATED
+          - TICKET_TEMPLATE_UPDATED
+          - TICKET_TEMPLATE_DELETED
+          - PSA_TICKET_CREATION_FAILED
+          - PSA_TICKET_CREATION_SUCCEEDED
+          - RESET_BY_PSA_TICKET_CALLBACK
+          - PSA_TICKET_CREATION_TEST
+          - PSA_ENABLED
+          - PSA_DISABLED
+          - PSA_CREDENTIALS_FAILED
+          - CONNECTWISE_AGREEMENTS_SYNC_COMPLETED
+          - CONNECTWISE_AGREEMENTS_SYNC_STARTED
+          - CONNECTWISE_NODE_SYNC_COMPLETED
+          - CONNECTWISE_NODE_SYNC_STARTED
+          - CONNECTWISE_NODE_SYNC_NODE_CREATED
+          - CONNECTWISE_NODE_SYNC_NODE_UPDATED
+          - CONNECTWISE_NODE_SYNC_NODE_DELETED
+          - CONNECTWISE_UPDATED
+          - CREDENTIAL_CREATED
+          - CREDENTIAL_UPDATED
+          - CREDENTIAL_DELETED
+          - REPORT_CREATED
+          - REPORT_UPDATED
+          - REPORT_DELETED
+          - TIME_ZONE_UPDATED
+          - LANGUAGE_TAG_UPDATED
+          - APP_USER_CRITICAL_ACTION
+          - APP_USER_AUDIT_FAILED_LOGIN
+          - END_USER_AUDIT_FAILED_LOGIN
+          - NODE_ROLE_CREATED
+          - NODE_ROLE_UPDATED
+          - NODE_ROLE_DELETED
+          - COMMENT
+          - VIPREAV_INSTALLED
+          - VIPREAV_INSTALL_FAILED
+          - VIPREAV_UNINSTALLED
+          - VIPREAV_UNINSTALL_FAILED
+          - VIPREAV_SCAN_THREAT_QUARANTINED
+          - VIPREAV_ACTIVEPROTECTION_THREAT_QUARANTINED
+          - VIPREAV_USERINITIATED_THREAT_QUARANTINED
+          - VIPREAV_QUARANTINED_THREAT_REMOVED
+          - VIPREAV_REBOOT_REQUIRED
+          - VIPREAV_SCAN_STARTED
+          - VIPREAV_SCAN_COMPLETED
+          - VIPREAV_SCAN_ABORTED
+          - VIPREAV_SCAN_FAILED
+          - VIPREAV_SCAN_PAUSED
+          - VIPREAV_DISABLED
+          - WEBROOT_COMMAND_SUBMITTED
+          - WEBROOT_THREAT_DETECTED
+          - WEBROOT_INSTALL_FAILED
+          - BITDEFENDER_SCAN_STARTED
+          - BITDEFENDER_SCAN_COMPLETED
+          - BITDEFENDER_THREAT_DELETE_FROM_QUARANTINE
+          - BITDEFENDER_THREAT_RESTORE_FROM_QUARANTINE
+          - BITDEFENDER_SCAN_FAILED
+          - BITDEFENDER_THREAT_DELETE_FROM_QUARANTINE_FAILED
+          - BITDEFENDER_THREAT_RESTORE_FROM_QUARANTINE_FAILED
+          - BITDEFENDER_DOWNLOAD_STARTED
+          - BITDEFENDER_DOWNLOAD_SUCCEEDED
+          - BITDEFENDER_DOWNLOAD_FAILED
+          - BITDEFENDER_INSTALLATION_STARTED
+          - BITDEFENDER_INSTALLATION_SUCCEEDED
+          - BITDEFENDER_INSTALLATION_FAILED
+          - BITDEFENDER_UNINSTALLATION_STARTED
+          - BITDEFENDER_UNINSTALLATION_SUCCEEDED
+          - BITDEFENDER_UNINSTALLATION_FAILED
+          - BITDEFENDER_UNPACKING_FAILED
+          - BDAS_BITDEFENDER_THREAT_IGNORED
+          - BDAS_BITDEFENDER_THREAT_PRESENT
+          - BDAS_BITDEFENDER_THREAT_DELETED
+          - BDAS_BITDEFENDER_THREAT_BLOCKED
+          - BDAS_BITDEFENDER_THREAT_QUARANTINED
+          - BDAS_BITDEFENDER_THREAT_CLEANED
+          - BDAS_BITDEFENDER_PURGE_QUARANTINE_FAILED
+          - BDAS_BITDEFENDER_PURGE_QUARANTINE_SUCCESS
+          - BDAS_BITDEFENDER_THREAT_QUARANTINE_RESTORED
+          - BDAS_BITDEFENDER_THREAT_QUARANTINE_RESTORED_CUSTOMPATH
+          - BDAS_BITDEFENDER_THREAT_QUARANTINE_DELETED
+          - BITDEFENDER_RETRY_INSTALL_COMPLETED
+          - BITDEFENDER_DISABLED
+          - BITDEFENDER_EXISTING_PRODUCT_UNINSTALL
+          - COMPETITOR_EXISTING_PRODUCT_UNINSTALL
+          - SCHEDULE_INSTALL_OPTION_CHANGED
+          - PATCH_MANAGEMENT_SCAN_STARTED
+          - PATCH_MANAGEMENT_SCAN_COMPLETED
+          - PATCH_MANAGEMENT_APPLY_PATCH_STARTED
+          - PATCH_MANAGEMENT_APPLY_PATCH_COMPLETED
+          - PATCH_MANAGEMENT_INSTALLED
+          - PATCH_MANAGEMENT_INSTALL_FAILED
+          - PATCH_MANAGEMENT_MESSAGE
+          - PATCH_MANAGEMENT_FAILURE
+          - TEAMVIEWER_INSTALLED
+          - TEAMVIEWER_INSTALL_FAILED
+          - TEAMVIEWER_UNINSTALLED
+          - TEAMVIEWER_UNINSTALL_FAILED
+          - TEAMVIEWER_CONNECTION_ESTABLISHED
+          - TEAMVIEWER_CONNECTION_TERMINATED
+          - TEAMVIEWER_PERMANENT_PASSWORD_CHANGED
+          - TEAMVIEWER_ACCOUNTNAME_ADDED
+          - TEAMVIEWER_ACCOUNTNAME_CHANGED
+          - TEAMVIEWER_ACCOUNTNAME_REMOVED
+          - TEAMVIEWER_CONNECTION_CANCELLED
+          - TEAMVIEWER_CONFIG_CHANGED
+          - SPLASHTOP_CONNECTION_INITIATED
+          - SPLASHTOP_CONNECTION_ESTABLISHED
+          - SPLASHTOP_CONNECTION_TERMINATED
+          - ADAPTER_ADDED
+          - ADAPTER_REMOVED
+          - ADAPTER_CONFIG_CHANGED
+          - ADAPTER_STATUS_CHANGED
+          - CPU_ADDED
+          - CPU_REMOVED
+          - MEMORY_ADDED
+          - MEMORY_REMOVED
+          - DISK_DRIVE_ADDED
+          - DISK_DRIVE_REMOVED
+          - USER_LOGGED_IN
+          - USER_LOGGED_OUT
+          - PORT_OPENED
+          - PORT_CLOSED
+          - WINDOWS_SERVICE_STARTED
+          - WINDOWS_SERVICE_STOPPED
+          - MAC_DAEMON_STARTED
+          - MAC_DAEMON_STOPPED
+          - USER_ACCOUNT_ADDED
+          - USER_ACCOUNT_REMOVED
+          - PROCESS_STARTED
+          - PROCESS_STOPPED
+          - SYSTEM_REBOOTED
+          - SOFTWARE_ADDED
+          - SOFTWARE_REMOVED
+          - DISK_PARTITION_ADDED
+          - DISK_PARTITION_REMOVED
+          - DISK_VOLUME_ADDED
+          - DISK_VOLUME_REMOVED
+          - CREDENTIALS_CHANGED
+          - RAID_CONTROLLER_ADDED
+          - RAID_CONTROLLER_REMOVED
+          - RAID_PHYSICAL_DRIVE_ADDED
+          - RAID_PHYSICAL_DRIVE_REMOVED
+          - RAID_LOGICAL_DISK_ADDED
+          - RAID_LOGICAL_DISK_REMOVED
+          - SERVER_MESSAGE
+          - AGENT_MESSAGE
+          - WEBAPP_MESSAGE
+          - SHADOWPROTECT_INSTALLED
+          - SHADOWPROTECT_INSTALL_FAILED
+          - SHADOWPROTECT_UNINSTALLED
+          - SHADOWPROTECT_UNINSTALL_FAILED
+          - SHADOWPROTECT_BACKUPJOB_FAILED
+          - SHADOWPROTECT_BACKUPJOB_ABORTED
+          - SHADOWPROTECT_LICENSE_PROVISIONED
+          - SHADOWPROTECT_LICENSE_PROVISION_FAILED
+          - SHADOWPROTECT_LICENSE_ACTIVATED
+          - SHADOWPROTECT_LICENSE_ACTIVATION_FAILED
+          - SHADOWPROTECT_LICENSE_DEACTIVATED
+          - SHADOWPROTECT_LICENSE_DEACTIVATION_FAILED
+          - IMAGEMANAGER_INSTALLED
+          - IMAGEMANAGER_INSTALL_FAILED
+          - IMAGEMANAGER_UNINSTALLED
+          - IMAGEMANAGER_UNINSTALL_FAILED
+          - IMAGEMANAGER_LICENSE_PROVISIONED
+          - IMAGEMANAGER_LICENSE_PROVISION_FAILED
+          - IMAGEMANAGER_LICENSE_ACTIVATED
+          - IMAGEMANAGER_LICENSE_ACTIVATION_FAILED
+          - IMAGEMANAGER_LICENSE_DEACTIVATED
+          - IMAGEMANAGER_LICENSE_DEACTIVATION_FAILED
+          - IMAGEMANAGER_CONSOLIDATION_FAILED
+          - IMAGEMANAGER_VERIFICATION_FAILED
+          - HELP_REQUEST_SUBMITTED
+          - SOFTWARE_PATCH_MANAGEMENT_SCAN_STARTED
+          - SOFTWARE_PATCH_MANAGEMENT_SCAN_COMPLETED
+          - SOFTWARE_PATCH_MANAGEMENT_APPLY_PATCH_STARTED
+          - SOFTWARE_PATCH_MANAGEMENT_APPLY_PATCH_COMPLETED
+          - SOFTWARE_PATCH_MANAGEMENT_INSTALLED
+          - SOFTWARE_PATCH_MANAGEMENT_INSTALL_FAILED
+          - SOFTWARE_PATCH_MANAGEMENT_MESSAGE
+          - CLOUDBERRY_INSTALLED
+          - CLOUDBERRY_INSTALL_FAILED
+          - CLOUDBERRY_UNINSTALLED
+          - CLOUDBERRY_UNINSTALL_FAILED
+          - CLOUDBERRY_BACKUPPLAN_CREATED
+          - CLOUDBERRY_BACKUPPLAN_EDITED
+          - CLOUDBERRY_BACKUPPLAN_DELETED
+          - CLOUDBERRY_BACKUPPLAN_CREATION_FAILED
+          - CLOUDBERRY_BACKUPJOB_STARTED
+          - CLOUDBERRY_BACKUPJOB_SUCCEEDED
+          - CLOUDBERRY_BACKUPJOB_FAILED
+          - CLOUDBERRY_BACKUPJOB_COMPLETED_WITH_WARNING
+          - CLOUDBERRY_USER_CREATED
+          - CLOUDBERRY_NETWORK_CREDENTIAL_CREATED
+          - CLOUDBERRY_NETWORK_CREDENTIAL_CREATION_FAILED
+          - RDP_CONNECTION_INITIATED
+          - RDP_CONNECTION_ESTABLISHED
+          - RDP_CONNECTION_TERMINATED
+          - RDP_AUTO_PROVISION
+          - SCHEDULED_TASK_CREATED
+          - SCHEDULED_TASK_UPDATED
+          - SCHEDULED_TASK_DELETED
+          - SCRIPT_CREATED
+          - SCRIPT_UPDATED
+          - SCRIPT_DELETED
+          - SECURITY_CREDENTIAL_ACCESS_GRANTED
+          - SECURITY_CREDENTIAL_ACCESS_DENIED
+          - REJECTED_NODE_DELETED
+          - MOBILE_DEVICE_UNREGISTERED
+          - REMOTE_TOOLS_UPLOAD_FILE_INITIATED
+          - REMOTE_TOOLS_DOWNLOAD_FILE_INITIATED
+          - REMOTE_TOOLS_CREATE_DIRECTORY_INITIATED
+          - REMOTE_TOOLS_RENAME_FILE_INITIATED
+          - REMOTE_TOOLS_DELETE_FILE_INITIATED
+          - REMOTE_TOOLS_MODIFY_OBJECT_SUCCESS
+          - REMOTE_TOOLS_MODIFY_OBJECT_FAILED
+          - REMOTE_TOOLS_COPY_OBJECT_SUCCESS
+          - REMOTE_TOOLS_COPY_OBJECT_FAILED
+          - REMOTE_TOOLS_MOVE_OBJECT_SUCCESS
+          - REMOTE_TOOLS_MOVE_OBJECT_FAILED
+          - REMOTE_TOOLS_DELETE_OBJECT_SUCCESS
+          - REMOTE_TOOLS_DELETE_OBJECT_FAILED
+          - REMOTE_TOOLS_CREATE_DIRECTORY_SUCCESS
+          - REMOTE_TOOLS_CREATE_DIRECTORY_FAILED
+          - REMOTE_TOOLS_FILE_TRANSFER_SUCCESS
+          - REMOTE_TOOLS_FILE_TRANSFER_FAILED
+          - REMOTE_TOOLS_SERVICE_CONTROL_INITIATED
+          - REMOTE_TOOLS_START_SERVICE_SUCCESS
+          - REMOTE_TOOLS_START_SERVICE_FAILED
+          - REMOTE_TOOLS_STOP_SERVICE_SUCCESS
+          - REMOTE_TOOLS_STOP_SERVICE_FAILED
+          - REMOTE_TOOLS_RESTART_SERVICE_SUCCESS
+          - REMOTE_TOOLS_RESTART_SERVICE_FAILED
+          - REMOTE_TOOLS_START_TYPE_CHANGE_SUCCESS
+          - REMOTE_TOOLS_START_TYPE_CHANGE_FAILED
+          - REMOTE_TOOLS_PROCESS_CONTROL_INITIATED
+          - REMOTE_TOOLS_SET_PROCESS_PRIORITY_SUCESS
+          - REMOTE_TOOLS_SET_PROCESS_PRIORITY_FAILED
+          - REMOTE_TOOLS_TERMINATE_PROCESS_SUCCESS
+          - REMOTE_TOOLS_TERMINATE_PROCESS_FAILED
+          - REMOTE_TOOLS_TERMINATE_PROCESS_TREE_SUCCESS
+          - REMOTE_TOOLS_TERMINATE_PROCESS_TREE_FAILED
+          - REMOTE_TOOLS_REGISTRY_CONTROL_INITIATED
+          - REMOTE_TOOLS_CREATE_KEY_SUCCESS
+          - REMOTE_TOOLS_CREATE_KEY_FAILED
+          - REMOTE_TOOLS_RENAME_KEY_SUCCESS
+          - REMOTE_TOOLS_RENAME_KEY_FAILED
+          - REMOTE_TOOLS_DELETE_KEY_SUCCESS
+          - REMOTE_TOOLS_DELETE_KEY_FAILED
+          - REMOTE_TOOLS_CREATE_PARAMETER_SUCCESS
+          - REMOTE_TOOLS_CREATE_PARAMETER_FAILED
+          - REMOTE_TOOLS_RENAME_PARAMETER_SUCCESS
+          - REMOTE_TOOLS_RENAME_PARAMETER_FAILED
+          - REMOTE_TOOLS_DELETE_PARAMETER_SUCCESS
+          - REMOTE_TOOLS_DELETE_PARAMETER_FAILED
+          - REMOTE_TOOLS_MODIFY_PARAMETER_SUCCESS
+          - REMOTE_TOOLS_MODIFY_PARAMETER_FAILED
+          - API_ACCESS_GRANTED
+          - API_ACCESS_DENIED
+          - API_WEBHOOK_CONFIGURATION_UPDATED
+          - API_ACCESS_REVOKED
+          - UNKNOWN
+        status:
+          type: string
+          description: Status description
+        activityResult:
+          type: string
+          description: Activity result
+          enum:
+          - SUCCESS
+          - FAILURE
+          - UNSUPPORTED
+          - UNCOMPLETED
+        sourceConfigUid:
+          type: string
+          description: Source configuration/policy element reference
+          format: uuid
+        sourceName:
+          type: string
+          description: Source configuration/policy element name
+        subject:
+          type: string
+          description: Activity subject
+        userId:
+          type: integer
+          description: User identifier
+          format: int32
+        message:
+          type: string
+          description: Activity message
+        type:
+          type: string
+          description: Activity type description
+        data:
+          type: object
+          additionalProperties: true
+    NodeActivitiesResponse:
+      type: object
+      properties:
+        lastActivityId:
+          type: integer
+          description: Last recorded activity ID for account
+          format: int64
+        activities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Activity'
+        lastNodeActivityId:
+          type: integer
+          description: Last recorded activity ID for device
+          format: int64
+    CredentialReference:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        type:
+          type: string
+          enum:
+          - SNMPV12C
+          - SNMPV3
+          - TELNET_SSH
+          - NETWORK_LOCATION
+          - ENCRYPTION_KEY
+          - BASIC
+    DeviceCredentialOptions:
+      type: object
+      properties:
+        roles:
+          type: array
+          items:
+            type: string
+        credentials:
+          type: array
+          items:
+            $ref: '#/components/schemas/CredentialReference'
+    DeviceScriptingOptions:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScriptCategory'
+        scripts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Script'
+        credentials:
+          $ref: '#/components/schemas/DeviceCredentialOptions'
+    Script:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Type of script/action
+          enum:
+          - ACTION
+          - SCRIPT
+        id:
+          type: integer
+          description: Custom script identifier (Scripts)
+          format: int32
+        uid:
+          type: string
+          description: Built-in action identifier (Actions)
+          format: uuid
+        name:
+          type: string
+          description: Name
+        language:
+          type: string
+          description: Script language
+        description:
+          type: string
+          description: Description
+        architecture:
+          uniqueItems: true
+          type: array
+          description: Applicable architectures
+          items:
+            type: string
+            description: Applicable architectures
+        categoryId:
+          type: integer
+          description: Script Category identifier
+          format: int32
+    ScriptCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        internal:
+          type: boolean
+    DiskDrive:
+      type: object
+      properties:
+        bytesPerSector:
+          type: integer
+          description: Number of bytes per sector
+          format: int32
+        description:
+          type: string
+          description: Description
+        interfaceType:
+          type: string
+          description: Interface type
+        manufacturer:
+          type: string
+          description: Manufacturer
+        mediaType:
+          type: string
+          description: Media Type
+        model:
+          type: string
+          description: Model
+        name:
+          type: string
+          description: Name
+        partitionCount:
+          type: integer
+          description: Number of partitions
+          format: int32
+        serialNumber:
+          type: string
+          description: Serial number
+        size:
+          type: integer
+          description: Size (Bytes)
+          format: int64
+        smartCapable:
+          type: boolean
+          description: Is S.M.A.R.T. capable?
+        status:
+          type: string
+          description: Status
+    Application:
+      type: object
+      properties:
+        installDate:
+          type: string
+          description: Installation Date
+          format: date-time
+        location:
+          type: string
+          description: Location
+        name:
+          type: string
+          description: Product Name
+        publisher:
+          type: string
+          description: Publisher
+        size:
+          type: integer
+          description: Size on disk
+          format: int64
+        version:
+          type: string
+          description: Version
+        productCode:
+          type: string
+          description: Product Code
+    LoggedOnUser:
+      type: object
+      properties:
+        userName:
+          type: string
+          description: User name
+        logonTime:
+          type: integer
+          description: Time of logon
+          format: int64
+    OSPatch:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Identifier
+          format: uuid
+        name:
+          type: string
+          description: Name
+        severity:
+          type: string
+          description: Severity
+        status:
+          type: string
+          description: Status
+        type:
+          type: string
+          description: Type
+        installedAt:
+          type: integer
+          description: Installation attempt timestamp
+          format: int64
+        kbNumber:
+          type: string
+          description: KB Number
+    SoftwarePatch:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Identifier
+          format: uuid
+        productIdentifier:
+          type: string
+          description: Software product identifier
+          format: uuid
+        title:
+          type: string
+          description: Patch title
+        impact:
+          type: string
+          description: Impact
+        status:
+          type: string
+          description: Status
+        type:
+          type: string
+          description: Patch type
+        installedAt:
+          type: integer
+          description: Installation attempt timestamp
+          format: int64
+    Alert:
+      type: object
+      properties:
+        uid:
+          type: string
+          description: Alert UID (activity series UID)
+          format: uuid
+        deviceId:
+          type: integer
+          description: Device identifier
+          format: int32
+        message:
+          type: string
+          description: Alert message
+        createTime:
+          type: integer
+          description: Alert creation timestamp
+          format: int64
+        updateTime:
+          type: integer
+          description: Alert last updated
+          format: int64
+        sourceType:
+          type: string
+          description: Alert origin
+          enum:
+          - AGENT_OFFLINE
+          - CONDITION_AGENT_CPU
+          - CONDITION_AGENT_MEMORY
+          - CONDITION_AGENT_NETWORK
+          - CONDITION_AGENT_DISK_IO
+          - CONDITION_AGENT_DISK_FREE_SPACE
+          - CONDITION_AGENT_DISK_USAGE
+          - CONDITION_NMS_CPU
+          - CONDITION_NMS_MEMORY
+          - CONDITION_NMS_NETWORK_TRAFFIC_BITS
+          - CONDITION_NMS_NETWORK_TRAFFIC_PERCENT
+          - CONDITION_NMS_NETWORK_STATUS
+          - CONDITION_NMS_NETWORK_STATUS_CHANGE
+          - SHADOWPROTECT_BACKUPJOB_CREATE
+          - SHADOWPROTECT_BACKUPJOB_UPDATE
+          - SHADOWPROTECT_BACKUPJOB_DELETE
+          - SHADOWPROTECT_BACKUPJOB_EXECUTE
+          - IMAGEMANAGER_MANAGEDFOLDER_CREATE
+          - IMAGEMANAGER_MANAGEDFOLDER_UPDATE
+          - IMAGEMANAGER_MANAGEDFOLDER_DELETE
+          - IMAGEMANAGER_MANAGEDFOLDER_EXECUTE
+          - TEAMVIEWER_CONNECTION
+          - RETRIEVE_AGENT_LOGS
+          - SCHEDULED_TASK
+          - CONDITION_WINDOWS_EVENT_LOG_TRIGGERED
+          - CONDITION_WINDOWS_SERVICE_STATE_CHANGED
+          - UI_MESSAGE_ACTION_REBOOT
+          - UI_MESSAGE_BD_INSTALLATION_ISSUES
+          - AV_QUARANTINE_THREAT
+          - AV_RESTORE_THREAT
+          - AV_DELETE_THREAT
+          - AV_REMOVE_THREAT
+          - BITDEFENDER_RESTORE_THREAT
+          - BITDEFENDER_DELETE_THREAT
+          - CONDITION_WINDOWS_PROCESS_STATE
+        sourceConfigUid:
+          type: string
+          description: Source configuration/policy element reference
+          format: uuid
+        sourceName:
+          type: string
+          description: Source configuration/policy element name
+        subject:
+          type: string
+          description: Alert subject
+        userId:
+          type: integer
+          description: User identifier
+          format: int32
+        psaTicketId:
+          type: integer
+          description: Related PSA ticket ID
+          format: int64
+        ticketTemplateId:
+          type: integer
+          description: PSA ticket template
+          format: int32
+        data:
+          type: object
+          additionalProperties: true
+        device:
+          $ref: '#/components/schemas/NodeWithDetailedReferences'
+    NodeWithDetailedReferences:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Node (Device) identifier
+          format: int32
+        parentDeviceId:
+          type: integer
+          description: Parent Node identifier
+          format: int32
+        organizationId:
+          type: integer
+          description: Organization identifier
+          format: int32
+        locationId:
+          type: integer
+          description: Location identifier
+          format: int32
+        nodeClass:
+          type: string
+          description: Node Class
+          enum:
+          - WINDOWS_SERVER
+          - WINDOWS_WORKSTATION
+          - LINUX_WORKSTATION
+          - MAC
+          - VMWARE_VM_HOST
+          - VMWARE_VM_GUEST
+          - LINUX_SERVER
+          - MAC_SERVER
+          - CLOUD_MONITOR_TARGET
+          - NMS_SWITCH
+          - NMS_ROUTER
+          - NMS_FIREWALL
+          - NMS_PRIVATE_NETWORK_GATEWAY
+          - NMS_PRINTER
+          - NMS_SCANNER
+          - NMS_DIAL_MANAGER
+          - NMS_WAP
+          - NMS_IPSLA
+          - NMS_COMPUTER
+          - NMS_VM_HOST
+          - NMS_APPLIANCE
+          - NMS_OTHER
+          - NMS_SERVER
+          - NMS_PHONE
+          - NMS_VIRTUAL_MACHINE
+          - NMS_NETWORK_MANAGEMENT_AGENT
+        nodeRoleId:
+          type: integer
+          description: Node Role identifier
+          format: int32
+        rolePolicyId:
+          type: integer
+          description: Node Role policy ID based on organization Policy Mapping
+          format: int32
+        policyId:
+          type: integer
+          description: Assigned policy ID (overrides organization policy mapping)
+          format: int32
+        approvalStatus:
+          type: string
+          description: Approval Status
+          enum:
+          - PENDING
+          - APPROVED
+        offline:
+          type: boolean
+          description: Is Offline?
+        displayName:
+          type: string
+          description: Display Name
+        systemName:
+          type: string
+          description: System Name
+        dnsName:
+          type: string
+          description: DNS Name
+        netbiosName:
+          type: string
+          description: NETBIOS Name
+        created:
+          type: integer
+          description: Created
+          format: int64
+        lastContact:
+          type: integer
+          description: Last Contact
+          format: int64
+        lastUpdate:
+          type: integer
+          description: Last data submission timestamp
+          format: int64
+        userData:
+          type: object
+          additionalProperties: true
+        tags:
+          type: array
+          description: Tags
+          items:
+            type: string
+            description: Tags
+        fields:
+          type: object
+          additionalProperties:
+            type: object
+            description: Custom Fields
+          description: Custom Fields
+        maintenance:
+          $ref: '#/components/schemas/Maintenance'
+        references:
+          $ref: '#/components/schemas/NodeReferences'
+      description: Device information
+    Job:
+      type: object
+      properties:
+        uid:
+          type: string
+          description: Task/Job UID (activity series UID)
+          format: uuid
+        deviceId:
+          type: integer
+          description: Device identifier
+          format: int32
+        message:
+          type: string
+          description: Job message
+        createTime:
+          type: integer
+          description: Job start timestamp
+          format: int64
+        updateTime:
+          type: integer
+          description: Job last updated
+          format: int64
+        sourceType:
+          type: string
+          description: Job origin
+          enum:
+          - AGENT_OFFLINE
+          - CONDITION_AGENT_CPU
+          - CONDITION_AGENT_MEMORY
+          - CONDITION_AGENT_NETWORK
+          - CONDITION_AGENT_DISK_IO
+          - CONDITION_AGENT_DISK_FREE_SPACE
+          - CONDITION_AGENT_DISK_USAGE
+          - CONDITION_NMS_CPU
+          - CONDITION_NMS_MEMORY
+          - CONDITION_NMS_NETWORK_TRAFFIC_BITS
+          - CONDITION_NMS_NETWORK_TRAFFIC_PERCENT
+          - CONDITION_NMS_NETWORK_STATUS
+          - CONDITION_NMS_NETWORK_STATUS_CHANGE
+          - SHADOWPROTECT_BACKUPJOB_CREATE
+          - SHADOWPROTECT_BACKUPJOB_UPDATE
+          - SHADOWPROTECT_BACKUPJOB_DELETE
+          - SHADOWPROTECT_BACKUPJOB_EXECUTE
+          - IMAGEMANAGER_MANAGEDFOLDER_CREATE
+          - IMAGEMANAGER_MANAGEDFOLDER_UPDATE
+          - IMAGEMANAGER_MANAGEDFOLDER_DELETE
+          - IMAGEMANAGER_MANAGEDFOLDER_EXECUTE
+          - TEAMVIEWER_CONNECTION
+          - RETRIEVE_AGENT_LOGS
+          - SCHEDULED_TASK
+          - CONDITION_WINDOWS_EVENT_LOG_TRIGGERED
+          - CONDITION_WINDOWS_SERVICE_STATE_CHANGED
+          - UI_MESSAGE_ACTION_REBOOT
+          - UI_MESSAGE_BD_INSTALLATION_ISSUES
+          - AV_QUARANTINE_THREAT
+          - AV_RESTORE_THREAT
+          - AV_DELETE_THREAT
+          - AV_REMOVE_THREAT
+          - BITDEFENDER_RESTORE_THREAT
+          - BITDEFENDER_DELETE_THREAT
+          - CONDITION_WINDOWS_PROCESS_STATE
+        sourceConfigUid:
+          type: string
+          description: Source configuration/policy element reference
+          format: uuid
+        sourceName:
+          type: string
+          description: Source configuration/policy element name
+        subject:
+          type: string
+          description: Job subject
+        userId:
+          type: integer
+          description: User identifier
+          format: int32
+        psaTicketId:
+          type: integer
+          description: Related PSA ticket ID
+          format: int64
+        ticketTemplateId:
+          type: integer
+          description: PSA ticket template
+          format: int32
+        data:
+          type: object
+          additionalProperties: true
+        device:
+          $ref: '#/components/schemas/NodeWithDetailedReferences'
+        jobStatus:
+          type: string
+          description: Job Status
+          enum:
+          - START_REQUESTED
+          - STARTED
+          - IN_PROCESS
+          - COMPLETED
+          - CANCEL_REQUESTED
+          - CANCELLED
+          - TRIGGERED
+          - RESET
+          - ACKNOWLEDGED
+          - DISABLED
+        jobResult:
+          type: string
+          description: Job result
+          enum:
+          - SUCCESS
+          - FAILURE
+          - UNSUPPORTED
+          - UNCOMPLETED
+        jobType:
+          type: string
+          description: Job Type
+          enum:
+          - ACTIONSET
+          - ACTION
+          - CONDITION
+          - CONDITION_ACTIONSET
+          - CONDITION_ACTION
+          - ANTIVIRUS
+          - PATCH_MANAGEMENT
+          - TEAMVIEWER
+          - MONITOR
+          - SYSTEM
+          - COMMENT
+          - SHADOWPROTECT
+          - IMAGEMANAGER
+          - HELP_REQUEST
+          - SOFTWARE_PATCH_MANAGEMENT
+          - SPLASHTOP
+          - CLOUDBERRY
+          - CLOUDBERRY_BACKUP
+          - SCHEDULED_TASK
+          - RDP
+          - SCRIPTING
+          - SECURITY
+          - REMOTE_TOOLS
+          - VIRTUALIZATION
+          - PSA
+    WindowsService:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name
+        displayName:
+          type: string
+          description: Display Name
+        description:
+          type: string
+          description: Description
+        startType:
+          type: string
+          description: Start Type
+          enum:
+          - AUTO_START
+          - AUTO_START_DELAYED
+          - BOOT_START
+          - DEMAND_START
+          - DISABLED
+          - SYSTEM_START
+        userName:
+          type: string
+          description: User Name
+        state:
+          type: string
+          description: State
+          enum:
+          - UNKNOWN
+          - STOPPED
+          - START_PENDING
+          - RUNNING
+          - STOP_PENDING
+          - PAUSE_PENDING
+          - PAUSED
+          - CONTINUE_PENDING
+    DeviceMutableProperties:
+      type: object
+      properties:
+        displayName:
+          type: string
+          description: Display name (User assigned)
+        userData:
+          type: object
+          additionalProperties: true
+    DeviceLink:
+      type: object
+      properties:
+        url:
+          type: string
+          description: URL
+        expires:
+          type: integer
+          description: Link expiration time
+          format: int64
+    WindowsServiceConfiguration:
+      type: object
+      properties:
+        startType:
+          type: string
+          description: Start Type
+          enum:
+          - AUTO_START
+          - AUTO_START_DELAYED
+          - BOOT_START
+          - DEMAND_START
+          - DISABLED
+          - SYSTEM_START
+        userName:
+          type: string
+          description: Username
+    WindowsServiceControlRequest:
+      type: object
+      properties:
+        action:
+          type: string
+          description: Action
+          enum:
+          - START
+          - PAUSE
+          - STOP
+          - RESTART
+    OrganizationModel:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Organization full name
+        description:
+          type: string
+          description: Organization Description
+        userData:
+          type: object
+          additionalProperties: true
+        nodeApprovalMode:
+          type: string
+          description: Device Approval Mode
+          enum:
+          - AUTOMATIC
+          - MANUAL
+          - REJECT
+        tags:
+          type: array
+          description: Tags
+          items:
+            type: string
+            description: Tags
+        fields:
+          type: object
+          additionalProperties:
+            type: object
+            description: Custom Fields
+          description: Custom Fields
+    Link:
+      type: object
+      properties:
+        url:
+          type: string
+          description: URL
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: User identifier
+          format: int32
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        enabled:
+          type: boolean
+        administrator:
+          type: boolean
+        permitAllClients:
+          type: boolean
+        notifyAllClients:
+          type: boolean
+        mustChangePw:
+          type: boolean
+        mfaConfigured:
+          type: boolean
+        userType:
+          type: string
+          enum:
+          - TECHNICIAN
+          - END_USER
+        invitationStatus:
+          type: string
+          enum:
+          - REGISTERED
+          - PENDING
+          - EXPIRED
+        organizationId:
+          type: integer
+          description: Identifier of organization for end-users
+          format: int32
+        deviceIds:
+          type: array
+          description: Device IDs which end-user is authorized to access
+          items:
+            type: integer
+            description: Device IDs which end-user is authorized to access
+            format: int32
+        tags:
+          type: array
+          description: Tags
+          items:
+            type: string
+            description: Tags
+        fields:
+          type: object
+          additionalProperties:
+            type: object
+            description: Custom Fields
+          description: Custom Fields
+    AntivirusThreatsReport:
+      type: object
+      properties:
+        cursor:
+          $ref: '#/components/schemas/Cursor'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeviceAntivirusThreat'
+    Cursor:
+      type: object
+      properties:
+        name:
+          type: string
+        offset:
+          type: integer
+          format: int32
+        count:
+          type: integer
+          format: int32
+        expires:
+          type: integer
+          format: int64
+    DeviceAntivirusThreat:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Threat name
+        productCode:
+          type: string
+          description: AntiVirus vendor product code
+        quarantineId:
+          type: string
+          description: Threat Quarantine ID
+        status:
+          type: string
+          description: Threat Status (vendor specific)
+        type:
+          type: string
+          description: Type of Threat
+        threatId:
+          type: integer
+          description: Threat ID
+          format: int64
+        category:
+          type: string
+          description: Threat Category
+        level:
+          type: string
+          description: Threat Level
+        detectionSource:
+          type: string
+          description: Detection source
+        traceList:
+          type: string
+          description: Trace list (Files, Cookies, etc. Vendor specific)
+        deviceId:
+          type: integer
+          description: Device identifier
+          format: int32
+        timestamp:
+          type: integer
+          description: Date/Time when data was collected/updated
+          format: int64
+    DeviceOperatingSystem:
+      type: object
+      properties:
+        manufacturer:
+          type: string
+          description: Manufacturer
+        name:
+          type: string
+          description: Name
+        architecture:
+          type: string
+          description: Architecture
+        lastBootTime:
+          type: integer
+          description: Last boot time
+          format: int64
+        buildNumber:
+          type: string
+          description: Build number
+        releaseId:
+          type: string
+          description: Release ID
+        servicePackMajorVersion:
+          type: integer
+          description: Service Pack Major Version
+          format: int32
+        servicePackMinorVersion:
+          type: integer
+          description: Service Pack Minor Version
+          format: int32
+        locale:
+          type: string
+          description: Locale
+        language:
+          type: string
+          description: Language
+        needsReboot:
+          type: boolean
+          description: Operating system has pending reboot requests
+        deviceId:
+          type: integer
+          description: Device identifier
+          format: int32
+        timestamp:
+          type: integer
+          description: Date/Time when data was collected/updated
+          format: int64
+    OperatingSystemsReport:
+      type: object
+      properties:
+        cursor:
+          $ref: '#/components/schemas/Cursor'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeviceOperatingSystem'
+    DeviceProcessor:
+      type: object
+      properties:
+        architecture:
+          type: string
+          description: Architecture
+        maxClockSpeed:
+          type: integer
+          description: Max Clock Speed
+          format: int64
+        clockSpeed:
+          type: integer
+          description: Current Clock Speed
+          format: int64
+        name:
+          type: string
+          description: Name
+        numCores:
+          type: integer
+          description: Number of Cores
+          format: int32
+        numLogicalCores:
+          type: integer
+          description: Number of Logical Cores]
+          format: int32
+        deviceId:
+          type: integer
+          description: Device identifier
+          format: int32
+        timestamp:
+          type: integer
+          description: Date/Time when data was collected/updated
+          format: int64
+    ProcessorReport:
+      type: object
+      properties:
+        cursor:
+          $ref: '#/components/schemas/Cursor'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeviceProcessor'
+    DeviceVolume:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name
+        driveLetter:
+          type: string
+          description: Drive Letter
+        label:
+          type: string
+          description: Volume Label
+        deviceType:
+          type: string
+          description: Device Type
+        fileSystem:
+          type: string
+          description: File System Type
+        autoMount:
+          type: boolean
+          description: Automatically Mounted
+        compressed:
+          type: boolean
+          description: Compressed
+        capacity:
+          type: integer
+          description: Capacity (bytes)
+          format: int64
+        freeSpace:
+          type: integer
+          description: Free Space (bytes)
+          format: int64
+        serialNumber:
+          type: string
+          description: Serial Number
+        deviceId:
+          type: integer
+          description: Device identifier
+          format: int32
+        timestamp:
+          type: integer
+          description: Date/Time when data was collected/updated
+          format: int64
+    VolumesReport:
+      type: object
+      properties:
+        cursor:
+          $ref: '#/components/schemas/Cursor'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeviceVolume'
+    DeviceDiskDrive:
+      type: object
+      properties:
+        bytesPerSector:
+          type: integer
+          description: Number of bytes per sector
+          format: int32
+        description:
+          type: string
+          description: Description
+        interfaceType:
+          type: string
+          description: Interface type
+        manufacturer:
+          type: string
+          description: Manufacturer
+        mediaType:
+          type: string
+          description: Media Type
+        model:
+          type: string
+          description: Model
+        name:
+          type: string
+          description: Name
+        partitionCount:
+          type: integer
+          description: Number of partitions
+          format: int32
+        serialNumber:
+          type: string
+          description: Serial number
+        size:
+          type: integer
+          description: Size (Bytes)
+          format: int64
+        smartCapable:
+          type: boolean
+          description: Is S.M.A.R.T. capable?
+        status:
+          type: string
+          description: Status
+        deviceId:
+          type: integer
+          description: Device identifier
+          format: int32
+        timestamp:
+          type: integer
+          description: Date/Time when data was collected/updated
+          format: int64
+    DiskDriveReport:
+      type: object
+      properties:
+        cursor:
+          $ref: '#/components/schemas/Cursor'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeviceDiskDrive'
+    ComputerSystemsReport:
+      type: object
+      properties:
+        cursor:
+          $ref: '#/components/schemas/Cursor'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeviceComputerSystem'
+    DeviceComputerSystem:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name
+        manufacturer:
+          type: string
+          description: Manufacturer
+        model:
+          type: string
+          description: Model
+        biosSerialNumber:
+          type: string
+          description: Bios Serial Number
+        serialNumber:
+          type: string
+          description: Serial Number
+        domain:
+          type: string
+        domainRole:
+          type: string
+        numberOfProcessors:
+          type: integer
+          format: int32
+        totalPhysicalMemory:
+          type: integer
+          format: int64
+        virtualMachine:
+          type: boolean
+        chassisType:
+          type: string
+        deviceId:
+          type: integer
+          description: Device identifier
+          format: int32
+        timestamp:
+          type: integer
+          description: Date/Time when data was collected/updated
+          format: int64
+    DeviceHealthReport:
+      type: object
+      properties:
+        cursor:
+          $ref: '#/components/schemas/Cursor'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeviceHealthSummary'
+    DeviceHealthSummary:
+      type: object
+      properties:
+        activeThreatsCount:
+          type: integer
+          description: Active AV threats count
+          format: int32
+        quarantinedThreatsCount:
+          type: integer
+          description: Quarantined AV threats count
+          format: int32
+        blockedThreatsCount:
+          type: integer
+          description: Blocked AV threats count
+          format: int32
+        failedOSPatchesCount:
+          type: integer
+          description: Number of failed OS patches
+          format: int32
+        pendingOSPatchesCount:
+          type: integer
+          description: Number of pending OS patches
+          format: int32
+        alertCount:
+          type: integer
+          description: Alerts count
+          format: int32
+        activeJobCount:
+          type: integer
+          description: Alerts job count
+          format: int32
+        failedSoftwarePatchesCount:
+          type: integer
+          description: Number of failed software patches
+          format: int32
+        pendingSoftwarePatchesCount:
+          type: integer
+          description: Number of pending software patches
+          format: int32
+        pendingRebootReason:
+          type: string
+          description: Pending reboot reasons
+        avInstallStatus:
+          type: string
+          description: Antivirus installation status
+          enum:
+          - REQUESTED
+          - DOWNLOAD_STARTED
+          - DOWNLOADED
+          - DOWNLOAD_FAILED
+          - INSTALL_STARTED
+          - INSTALLED
+          - INSTALL_FAILED
+          - UNINSTALL_REQUESTED
+          - UNINSTALL_FAILED
+          - UNINSTALLED
+        productsInstallationStatuses:
+          type: object
+          additionalProperties:
+            type: string
+            description: Integrated products' installation statuses
+            enum:
+            - REQUESTED
+            - DOWNLOAD_STARTED
+            - DOWNLOADED
+            - DOWNLOAD_FAILED
+            - INSTALL_STARTED
+            - INSTALLED
+            - INSTALL_FAILED
+            - UNINSTALL_REQUESTED
+            - UNINSTALL_FAILED
+            - UNINSTALLED
+          description: Integrated products' installation statuses
+        offline:
+          type: boolean
+          description: Is device offline?
+        parentDeviceId:
+          type: integer
+          description: Parent device identifier
+          format: int32
+        parentOffline:
+          type: boolean
+          description: Is parent device offline
+        healthStatus:
+          type: string
+          description: Health status
+          enum:
+          - UNKNOWN
+          - HEALTHY
+          - NEEDS_ATTENTION
+          - UNHEALTHY
+        installationIssuesCount:
+          type: integer
+          format: int32
+        deviceId:
+          type: integer
+          description: Device identifier
+          format: int32
+    DeviceApplication:
+      type: object
+      properties:
+        installDate:
+          type: string
+          description: Installation Date
+          format: date-time
+        location:
+          type: string
+          description: Location
+        name:
+          type: string
+          description: Product Name
+        publisher:
+          type: string
+          description: Publisher
+        size:
+          type: integer
+          description: Size on disk
+          format: int64
+        version:
+          type: string
+          description: Version
+        productCode:
+          type: string
+          description: Product Code
+        deviceId:
+          type: integer
+          description: Device identifier
+          format: int32
+        timestamp:
+          type: integer
+          description: Date/Time when data was collected/updated
+          format: int64
+    SoftwareReport:
+      type: object
+      properties:
+        cursor:
+          $ref: '#/components/schemas/Cursor'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeviceApplication'
+    DeviceOSPatch:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Identifier
+          format: uuid
+        name:
+          type: string
+          description: Name
+        severity:
+          type: string
+          description: Severity
+        status:
+          type: string
+          description: Status
+        type:
+          type: string
+          description: Type
+        installedAt:
+          type: integer
+          description: Installation attempt timestamp
+          format: int64
+        deviceId:
+          type: integer
+          description: Device identifier
+          format: int32
+        timestamp:
+          type: integer
+          description: Date/Time when data was collected/updated
+          format: int64
+        kbNumber:
+          type: string
+          description: KB Number
+    OSPatchReport:
+      type: object
+      properties:
+        cursor:
+          $ref: '#/components/schemas/Cursor'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeviceOSPatch'
+    DeviceSoftwarePatch:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Identifier
+          format: uuid
+        productIdentifier:
+          type: string
+          description: Software product identifier
+          format: uuid
+        title:
+          type: string
+          description: Patch title
+        impact:
+          type: string
+          description: Impact
+        status:
+          type: string
+          description: Status
+        type:
+          type: string
+          description: Patch type
+        installedAt:
+          type: integer
+          description: Installation attempt timestamp
+          format: int64
+        deviceId:
+          type: integer
+          description: Device identifier
+          format: int32
+        timestamp:
+          type: integer
+          description: Date/Time when data was collected/updated
+          format: int64
+    SoftwarePatchReport:
+      type: object
+      properties:
+        cursor:
+          $ref: '#/components/schemas/Cursor'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeviceSoftwarePatch'
+    DeviceRAIDController:
+      type: object
+      properties:
+        backupBatteryStatus:
+          type: string
+          description: Backup Battery Status
+        batteryTemperature:
+          type: integer
+          description: Battery Temperature
+          format: int32
+        biosVersion:
+          type: string
+          description: BIOS Version
+        cacheSize:
+          type: integer
+          description: Cache size (bytes)
+          format: int64
+        controllerIndex:
+          type: integer
+          description: Controller Index
+          format: int32
+        driverName:
+          type: string
+          description: Device Driver Name
+        driverVersion:
+          type: string
+          description: Driver Version
+        family:
+          type: string
+          description: Family
+        firmwareVersion:
+          type: string
+          description: Firmware Version
+        hardwareRevision:
+          type: string
+          description: Hardware Revision
+        manufacturer:
+          type: string
+          description: Manufacturer
+        manufacturingDate:
+          type: integer
+          description: Manufacturing date
+          format: int64
+        model:
+          type: string
+          description: Model
+        physicalDriveCount:
+          type: integer
+          description: Physical drive count
+          format: int32
+        slot:
+          type: string
+          description: Slot
+        systemHealthStatus:
+          type: string
+          description: System Health Status
+        virtualDriveCount:
+          type: integer
+          description: Virtual drive count
+          format: int32
+        deviceId:
+          type: integer
+          description: Device identifier
+          format: int32
+        timestamp:
+          type: integer
+          description: Date/Time when data was collected/updated
+          format: int64
+    RAIDControllerReport:
+      type: object
+      properties:
+        cursor:
+          $ref: '#/components/schemas/Cursor'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeviceRAIDController'
+    DeviceRAIDDrive:
+      type: object
+      properties:
+        controllerIndex:
+          type: integer
+          description: Controller index
+          format: int32
+        driveGroup:
+          type: string
+          description: Drive Group
+        driveId:
+          type: string
+          description: Drive Identifier
+        interfaceType:
+          type: string
+          description: Interface type
+        location:
+          type: string
+          description: Location
+        mediaType:
+          type: string
+          description: Media type
+        model:
+          type: string
+          description: Model
+        protectionInfo:
+          type: string
+          description: Protection Information
+        selfEncrypted:
+          type: boolean
+          description: Is self encrypted?
+        serial:
+          type: string
+          description: Serial number
+        size:
+          type: integer
+          description: Size (bytes)
+          format: int64
+        spun:
+          type: boolean
+          description: Spun?
+        status:
+          type: string
+          description: Status
+        deviceId:
+          type: integer
+          description: Device identifier
+          format: int32
+        timestamp:
+          type: integer
+          description: Date/Time when data was collected/updated
+          format: int64
+    RAIDDriveReport:
+      type: object
+      properties:
+        cursor:
+          $ref: '#/components/schemas/Cursor'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeviceRAIDDrive'
+    DeviceWindowsService:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name
+        displayName:
+          type: string
+          description: Display Name
+        description:
+          type: string
+          description: Description
+        startType:
+          type: string
+          description: Start Type
+          enum:
+          - AUTO_START
+          - AUTO_START_DELAYED
+          - BOOT_START
+          - DEMAND_START
+          - DISABLED
+          - SYSTEM_START
+        userName:
+          type: string
+          description: User Name
+        state:
+          type: string
+          description: State
+          enum:
+          - UNKNOWN
+          - STOPPED
+          - START_PENDING
+          - RUNNING
+          - STOP_PENDING
+          - PAUSE_PENDING
+          - PAUSED
+          - CONTINUE_PENDING
+        deviceId:
+          type: integer
+          description: Device identifier
+          format: int32
+        timestamp:
+          type: integer
+          description: Date/Time when data was collected/updated
+          format: int64
+    WindowsServiceReport:
+      type: object
+      properties:
+        cursor:
+          $ref: '#/components/schemas/Cursor'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeviceWindowsService'
+    DeviceLoggedOnUser:
+      type: object
+      properties:
+        userName:
+          type: string
+          description: User name
+        logonTime:
+          type: integer
+          description: Time of logon
+          format: int64
+        deviceId:
+          type: integer
+          description: Device identifier
+          format: int32
+    LoggedOnUsersReport:
+      type: object
+      properties:
+        cursor:
+          $ref: '#/components/schemas/Cursor'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeviceLoggedOnUser'
+    AntivirusStatusReport:
+      type: object
+      properties:
+        cursor:
+          $ref: '#/components/schemas/Cursor'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeviceAntivirusStatus'
+    DeviceAntivirusStatus:
+      type: object
+      properties:
+        productName:
+          type: string
+          description: Product name
+        productState:
+          type: string
+          description: Product state
+        definitionStatus:
+          type: string
+          description: Definition Status
+        version:
+          type: string
+          description: Product Version
+        deviceId:
+          type: integer
+          description: Device identifier
+          format: int32
+        timestamp:
+          type: integer
+          description: Date/Time when data was collected/updated
+          format: int64
+    Group:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Group identifier
+          format: int32
+        name:
+          type: string
+          description: Group Name
+        description:
+          type: string
+          description: Group description
+        shared:
+          type: boolean
+          description: Group is shared with all users?
+        created:
+          type: integer
+          description: Timestamp of group creation
+          format: int64
+        updated:
+          type: integer
+          description: Timestamp last update
+          format: int64
+        deviceCount:
+          type: integer
+          description: Estimated/Last known device count.  Can be `null` if group
+            membership has not been evaluated recently
+          format: int32
+        lastEvaluated:
+          type: integer
+          description: Last evaluation time of group membership for nodes (search)
+          format: int64
+        tags:
+          type: array
+          description: Tags
+          items:
+            type: string
+            description: Tags
+        fields:
+          type: object
+          additionalProperties:
+            type: object
+            description: Custom Fields
+          description: Custom Fields
+    ActivitiesResponse:
+      type: object
+      properties:
+        lastActivityId:
+          type: integer
+          description: Last recorded activity ID for account
+          format: int64
+        activities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Activity'
+    SoftwareProduct:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Product identifier
+          format: uuid
+        vendorName:
+          type: string
+          description: Vendor Name
+        productName:
+          type: string
+          description: Product Name
+        installable:
+          type: boolean
+          description: Installable
+        active:
+          type: boolean
+          description: Active
+    ScheduledTask:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Scheduled Task identifier
+        id:
+          type: integer
+          format: int32
+        description:
+          type: string
+          description: Description
+        enabled:
+          type: boolean
+          description: Is Enabled ?
+        created:
+          type: integer
+          description: Timestamp of Scheduled Task creation
+          format: int64
+        lastRun:
+          type: integer
+          description: Timestamp of last Scheduled Task run
+          format: int64
+        runCount:
+          type: integer
+          description: Number of times scheduled task ran
+          format: int32
+    LocationWithOrganizationRef:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Location name
+        address:
+          type: string
+          description: Address
+        description:
+          type: string
+          description: Description
+        userData:
+          type: object
+          additionalProperties: true
+        tags:
+          type: array
+          description: Tags
+          items:
+            type: string
+            description: Tags
+        fields:
+          type: object
+          additionalProperties:
+            type: object
+            description: Custom Fields
+          description: Custom Fields
+        id:
+          type: integer
+          description: Location identifier
+          format: int32
+        organizationId:
+          type: integer
+          description: Organization identifier
+          format: int32
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://app.ninjarmm.com/oauth/authorize
+          tokenUrl: https://app.ninjarmm.com/oauth/token
+          scopes:
+            monitoring: Monitoring APIs
+            management: Management APIs
+        implicit:
+          authorizationUrl: https://app.ninjarmm.com/oauth/authorize
+          tokenUrl: https://app.ninjarmm.com/oauth/token
+          scopes:
+            monitoring: Monitoring APIs
+            management: Management APIs
+    sessionKey:
+      type: apiKey
+      name: sessionKey
+      in: cookie

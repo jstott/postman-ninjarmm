@@ -1,0 +1,790 @@
+openapi: 3.0.1
+info:
+  title: NinjaRMM Webhook (API 2.0)
+  description: Ninja RMM Public Webhook PSA documentation.
+  contact:
+    email: api@ninjarmm.com
+  version: 2.0.5-draft
+servers:
+- url: https://your–webhook-host.psa.com/base/path
+  description: Your webhook server
+paths:
+  /webhook:
+    post:
+      summary: Ninja RMM incoming WebHook request
+      description: Accepts and processes WebHook activity notification
+      operationId: onActivity
+      requestBody:
+        description: Request body
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DetailedActivity'
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*': {}
+components:
+  schemas:
+    DetailedActivity:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Activity identifier
+          format: int32
+        activityTime:
+          type: integer
+          description: Activity timestamp
+          format: int64
+        deviceId:
+          type: integer
+          description: Device identifier
+          format: int32
+        severity:
+          type: string
+          description: Severity
+          enum:
+          - NONE
+          - MINOR
+          - MODERATE
+          - MAJOR
+          - CRITICAL
+        priority:
+          type: string
+          description: Priority
+          enum:
+          - NONE
+          - LOW
+          - MEDIUM
+          - HIGH
+        seriesUid:
+          type: string
+          description: Activity series UID (job/condition UID)
+          format: uuid
+        activityType:
+          type: string
+          description: Activity type code
+          enum:
+          - ACTIONSET
+          - ACTION
+          - CONDITION
+          - CONDITION_ACTIONSET
+          - CONDITION_ACTION
+          - ANTIVIRUS
+          - PATCH_MANAGEMENT
+          - TEAMVIEWER
+          - MONITOR
+          - SYSTEM
+          - COMMENT
+          - SHADOWPROTECT
+          - IMAGEMANAGER
+          - HELP_REQUEST
+          - SOFTWARE_PATCH_MANAGEMENT
+          - SPLASHTOP
+          - CLOUDBERRY
+          - CLOUDBERRY_BACKUP
+          - SCHEDULED_TASK
+          - RDP
+          - SCRIPTING
+          - SECURITY
+          - REMOTE_TOOLS
+          - VIRTUALIZATION
+          - PSA
+        statusCode:
+          type: string
+          description: Activity status code
+          enum:
+          - START_REQUESTED
+          - STARTED
+          - IN_PROCESS
+          - COMPLETED
+          - CANCEL_REQUESTED
+          - CANCELLED
+          - TRIGGERED
+          - RESET
+          - ACKNOWLEDGED
+          - DISABLED
+          - EVALUATION_FAILURE
+          - CLIENT_CREATED
+          - CLIENT_UPDATED
+          - CLIENT_DELETED
+          - POLICY_CREATED
+          - POLICY_UPDATED
+          - POLICY_DELETED
+          - NODE_CREATED
+          - NODE_UPDATED
+          - NODE_DELETED
+          - LOCATION_CREATED
+          - LOCATION_UPDATED
+          - LOCATION_DELETED
+          - NODE_ACCESS_GRANTED
+          - NODE_ACCESS_DENIED
+          - NODE_REGISTRATION_REJECTED
+          - APP_USER_CREATED
+          - APP_USER_UPDATED
+          - APP_USER_DELETED
+          - APP_USER_LOGGED_IN
+          - APP_USER_LOGGED_OUT
+          - APP_USER_MFA_SETUP
+          - APP_USER_MFA_DELETED
+          - END_USER_CREATED
+          - END_USER_UPDATED
+          - END_USER_DELETED
+          - END_USER_LOGGED_IN
+          - END_USER_LOGGED_OUT
+          - END_USER_MFA_SETUP
+          - END_USER_MFA_DELETED
+          - TICKET_TEMPLATE_CREATED
+          - TICKET_TEMPLATE_UPDATED
+          - TICKET_TEMPLATE_DELETED
+          - PSA_TICKET_CREATION_FAILED
+          - PSA_TICKET_CREATION_SUCCEEDED
+          - RESET_BY_PSA_TICKET_CALLBACK
+          - PSA_TICKET_CREATION_TEST
+          - PSA_ENABLED
+          - PSA_DISABLED
+          - PSA_CREDENTIALS_FAILED
+          - CONNECTWISE_AGREEMENTS_SYNC_COMPLETED
+          - CONNECTWISE_AGREEMENTS_SYNC_STARTED
+          - CONNECTWISE_NODE_SYNC_COMPLETED
+          - CONNECTWISE_NODE_SYNC_STARTED
+          - CONNECTWISE_NODE_SYNC_NODE_CREATED
+          - CONNECTWISE_NODE_SYNC_NODE_UPDATED
+          - CONNECTWISE_NODE_SYNC_NODE_DELETED
+          - CONNECTWISE_UPDATED
+          - CREDENTIAL_CREATED
+          - CREDENTIAL_UPDATED
+          - CREDENTIAL_DELETED
+          - REPORT_CREATED
+          - REPORT_UPDATED
+          - REPORT_DELETED
+          - TIME_ZONE_UPDATED
+          - LANGUAGE_TAG_UPDATED
+          - APP_USER_CRITICAL_ACTION
+          - APP_USER_AUDIT_FAILED_LOGIN
+          - END_USER_AUDIT_FAILED_LOGIN
+          - NODE_ROLE_CREATED
+          - NODE_ROLE_UPDATED
+          - NODE_ROLE_DELETED
+          - COMMENT
+          - VIPREAV_INSTALLED
+          - VIPREAV_INSTALL_FAILED
+          - VIPREAV_UNINSTALLED
+          - VIPREAV_UNINSTALL_FAILED
+          - VIPREAV_SCAN_THREAT_QUARANTINED
+          - VIPREAV_ACTIVEPROTECTION_THREAT_QUARANTINED
+          - VIPREAV_USERINITIATED_THREAT_QUARANTINED
+          - VIPREAV_QUARANTINED_THREAT_REMOVED
+          - VIPREAV_REBOOT_REQUIRED
+          - VIPREAV_SCAN_STARTED
+          - VIPREAV_SCAN_COMPLETED
+          - VIPREAV_SCAN_ABORTED
+          - VIPREAV_SCAN_FAILED
+          - VIPREAV_SCAN_PAUSED
+          - VIPREAV_DISABLED
+          - WEBROOT_COMMAND_SUBMITTED
+          - WEBROOT_THREAT_DETECTED
+          - WEBROOT_INSTALL_FAILED
+          - BITDEFENDER_SCAN_STARTED
+          - BITDEFENDER_SCAN_COMPLETED
+          - BITDEFENDER_THREAT_DELETE_FROM_QUARANTINE
+          - BITDEFENDER_THREAT_RESTORE_FROM_QUARANTINE
+          - BITDEFENDER_SCAN_FAILED
+          - BITDEFENDER_THREAT_DELETE_FROM_QUARANTINE_FAILED
+          - BITDEFENDER_THREAT_RESTORE_FROM_QUARANTINE_FAILED
+          - BITDEFENDER_DOWNLOAD_STARTED
+          - BITDEFENDER_DOWNLOAD_SUCCEEDED
+          - BITDEFENDER_DOWNLOAD_FAILED
+          - BITDEFENDER_INSTALLATION_STARTED
+          - BITDEFENDER_INSTALLATION_SUCCEEDED
+          - BITDEFENDER_INSTALLATION_FAILED
+          - BITDEFENDER_UNINSTALLATION_STARTED
+          - BITDEFENDER_UNINSTALLATION_SUCCEEDED
+          - BITDEFENDER_UNINSTALLATION_FAILED
+          - BITDEFENDER_UNPACKING_FAILED
+          - BDAS_BITDEFENDER_THREAT_IGNORED
+          - BDAS_BITDEFENDER_THREAT_PRESENT
+          - BDAS_BITDEFENDER_THREAT_DELETED
+          - BDAS_BITDEFENDER_THREAT_BLOCKED
+          - BDAS_BITDEFENDER_THREAT_QUARANTINED
+          - BDAS_BITDEFENDER_THREAT_CLEANED
+          - BDAS_BITDEFENDER_PURGE_QUARANTINE_FAILED
+          - BDAS_BITDEFENDER_PURGE_QUARANTINE_SUCCESS
+          - BDAS_BITDEFENDER_THREAT_QUARANTINE_RESTORED
+          - BDAS_BITDEFENDER_THREAT_QUARANTINE_RESTORED_CUSTOMPATH
+          - BDAS_BITDEFENDER_THREAT_QUARANTINE_DELETED
+          - BITDEFENDER_RETRY_INSTALL_COMPLETED
+          - BITDEFENDER_DISABLED
+          - BITDEFENDER_EXISTING_PRODUCT_UNINSTALL
+          - COMPETITOR_EXISTING_PRODUCT_UNINSTALL
+          - SCHEDULE_INSTALL_OPTION_CHANGED
+          - PATCH_MANAGEMENT_SCAN_STARTED
+          - PATCH_MANAGEMENT_SCAN_COMPLETED
+          - PATCH_MANAGEMENT_APPLY_PATCH_STARTED
+          - PATCH_MANAGEMENT_APPLY_PATCH_COMPLETED
+          - PATCH_MANAGEMENT_INSTALLED
+          - PATCH_MANAGEMENT_INSTALL_FAILED
+          - PATCH_MANAGEMENT_MESSAGE
+          - PATCH_MANAGEMENT_FAILURE
+          - TEAMVIEWER_INSTALLED
+          - TEAMVIEWER_INSTALL_FAILED
+          - TEAMVIEWER_UNINSTALLED
+          - TEAMVIEWER_UNINSTALL_FAILED
+          - TEAMVIEWER_CONNECTION_ESTABLISHED
+          - TEAMVIEWER_CONNECTION_TERMINATED
+          - TEAMVIEWER_PERMANENT_PASSWORD_CHANGED
+          - TEAMVIEWER_ACCOUNTNAME_ADDED
+          - TEAMVIEWER_ACCOUNTNAME_CHANGED
+          - TEAMVIEWER_ACCOUNTNAME_REMOVED
+          - TEAMVIEWER_CONNECTION_CANCELLED
+          - TEAMVIEWER_CONFIG_CHANGED
+          - SPLASHTOP_CONNECTION_INITIATED
+          - SPLASHTOP_CONNECTION_ESTABLISHED
+          - SPLASHTOP_CONNECTION_TERMINATED
+          - ADAPTER_ADDED
+          - ADAPTER_REMOVED
+          - ADAPTER_CONFIG_CHANGED
+          - ADAPTER_STATUS_CHANGED
+          - CPU_ADDED
+          - CPU_REMOVED
+          - MEMORY_ADDED
+          - MEMORY_REMOVED
+          - DISK_DRIVE_ADDED
+          - DISK_DRIVE_REMOVED
+          - USER_LOGGED_IN
+          - USER_LOGGED_OUT
+          - PORT_OPENED
+          - PORT_CLOSED
+          - WINDOWS_SERVICE_STARTED
+          - WINDOWS_SERVICE_STOPPED
+          - MAC_DAEMON_STARTED
+          - MAC_DAEMON_STOPPED
+          - USER_ACCOUNT_ADDED
+          - USER_ACCOUNT_REMOVED
+          - PROCESS_STARTED
+          - PROCESS_STOPPED
+          - SYSTEM_REBOOTED
+          - SOFTWARE_ADDED
+          - SOFTWARE_REMOVED
+          - DISK_PARTITION_ADDED
+          - DISK_PARTITION_REMOVED
+          - DISK_VOLUME_ADDED
+          - DISK_VOLUME_REMOVED
+          - CREDENTIALS_CHANGED
+          - RAID_CONTROLLER_ADDED
+          - RAID_CONTROLLER_REMOVED
+          - RAID_PHYSICAL_DRIVE_ADDED
+          - RAID_PHYSICAL_DRIVE_REMOVED
+          - RAID_LOGICAL_DISK_ADDED
+          - RAID_LOGICAL_DISK_REMOVED
+          - SERVER_MESSAGE
+          - AGENT_MESSAGE
+          - WEBAPP_MESSAGE
+          - SHADOWPROTECT_INSTALLED
+          - SHADOWPROTECT_INSTALL_FAILED
+          - SHADOWPROTECT_UNINSTALLED
+          - SHADOWPROTECT_UNINSTALL_FAILED
+          - SHADOWPROTECT_BACKUPJOB_FAILED
+          - SHADOWPROTECT_BACKUPJOB_ABORTED
+          - SHADOWPROTECT_LICENSE_PROVISIONED
+          - SHADOWPROTECT_LICENSE_PROVISION_FAILED
+          - SHADOWPROTECT_LICENSE_ACTIVATED
+          - SHADOWPROTECT_LICENSE_ACTIVATION_FAILED
+          - SHADOWPROTECT_LICENSE_DEACTIVATED
+          - SHADOWPROTECT_LICENSE_DEACTIVATION_FAILED
+          - IMAGEMANAGER_INSTALLED
+          - IMAGEMANAGER_INSTALL_FAILED
+          - IMAGEMANAGER_UNINSTALLED
+          - IMAGEMANAGER_UNINSTALL_FAILED
+          - IMAGEMANAGER_LICENSE_PROVISIONED
+          - IMAGEMANAGER_LICENSE_PROVISION_FAILED
+          - IMAGEMANAGER_LICENSE_ACTIVATED
+          - IMAGEMANAGER_LICENSE_ACTIVATION_FAILED
+          - IMAGEMANAGER_LICENSE_DEACTIVATED
+          - IMAGEMANAGER_LICENSE_DEACTIVATION_FAILED
+          - IMAGEMANAGER_CONSOLIDATION_FAILED
+          - IMAGEMANAGER_VERIFICATION_FAILED
+          - HELP_REQUEST_SUBMITTED
+          - SOFTWARE_PATCH_MANAGEMENT_SCAN_STARTED
+          - SOFTWARE_PATCH_MANAGEMENT_SCAN_COMPLETED
+          - SOFTWARE_PATCH_MANAGEMENT_APPLY_PATCH_STARTED
+          - SOFTWARE_PATCH_MANAGEMENT_APPLY_PATCH_COMPLETED
+          - SOFTWARE_PATCH_MANAGEMENT_INSTALLED
+          - SOFTWARE_PATCH_MANAGEMENT_INSTALL_FAILED
+          - SOFTWARE_PATCH_MANAGEMENT_MESSAGE
+          - CLOUDBERRY_INSTALLED
+          - CLOUDBERRY_INSTALL_FAILED
+          - CLOUDBERRY_UNINSTALLED
+          - CLOUDBERRY_UNINSTALL_FAILED
+          - CLOUDBERRY_BACKUPPLAN_CREATED
+          - CLOUDBERRY_BACKUPPLAN_EDITED
+          - CLOUDBERRY_BACKUPPLAN_DELETED
+          - CLOUDBERRY_BACKUPPLAN_CREATION_FAILED
+          - CLOUDBERRY_BACKUPJOB_STARTED
+          - CLOUDBERRY_BACKUPJOB_SUCCEEDED
+          - CLOUDBERRY_BACKUPJOB_FAILED
+          - CLOUDBERRY_BACKUPJOB_COMPLETED_WITH_WARNING
+          - CLOUDBERRY_USER_CREATED
+          - CLOUDBERRY_NETWORK_CREDENTIAL_CREATED
+          - CLOUDBERRY_NETWORK_CREDENTIAL_CREATION_FAILED
+          - RDP_CONNECTION_INITIATED
+          - RDP_CONNECTION_ESTABLISHED
+          - RDP_CONNECTION_TERMINATED
+          - RDP_AUTO_PROVISION
+          - NC_SESSION_REQUESTED
+          - NC_SESSION_STARTED
+          - NC_SESSION_TERMINATED
+          - NC_SESSION_SESSION_TERMINATION_REQUESTED
+          - SCHEDULED_TASK_CREATED
+          - SCHEDULED_TASK_UPDATED
+          - SCHEDULED_TASK_DELETED
+          - SCRIPT_CREATED
+          - SCRIPT_UPDATED
+          - SCRIPT_DELETED
+          - SECURITY_CREDENTIAL_ACCESS_GRANTED
+          - SECURITY_CREDENTIAL_ACCESS_DENIED
+          - REJECTED_NODE_DELETED
+          - MOBILE_DEVICE_UNREGISTERED
+          - REMOTE_TOOLS_UPLOAD_FILE_INITIATED
+          - REMOTE_TOOLS_DOWNLOAD_FILE_INITIATED
+          - REMOTE_TOOLS_CREATE_DIRECTORY_INITIATED
+          - REMOTE_TOOLS_RENAME_FILE_INITIATED
+          - REMOTE_TOOLS_DELETE_FILE_INITIATED
+          - REMOTE_TOOLS_MODIFY_OBJECT_SUCCESS
+          - REMOTE_TOOLS_MODIFY_OBJECT_FAILED
+          - REMOTE_TOOLS_COPY_OBJECT_SUCCESS
+          - REMOTE_TOOLS_COPY_OBJECT_FAILED
+          - REMOTE_TOOLS_MOVE_OBJECT_SUCCESS
+          - REMOTE_TOOLS_MOVE_OBJECT_FAILED
+          - REMOTE_TOOLS_DELETE_OBJECT_SUCCESS
+          - REMOTE_TOOLS_DELETE_OBJECT_FAILED
+          - REMOTE_TOOLS_CREATE_DIRECTORY_SUCCESS
+          - REMOTE_TOOLS_CREATE_DIRECTORY_FAILED
+          - REMOTE_TOOLS_FILE_TRANSFER_SUCCESS
+          - REMOTE_TOOLS_FILE_TRANSFER_FAILED
+          - REMOTE_TOOLS_SERVICE_CONTROL_INITIATED
+          - REMOTE_TOOLS_START_SERVICE_SUCCESS
+          - REMOTE_TOOLS_START_SERVICE_FAILED
+          - REMOTE_TOOLS_STOP_SERVICE_SUCCESS
+          - REMOTE_TOOLS_STOP_SERVICE_FAILED
+          - REMOTE_TOOLS_RESTART_SERVICE_SUCCESS
+          - REMOTE_TOOLS_RESTART_SERVICE_FAILED
+          - REMOTE_TOOLS_START_TYPE_CHANGE_SUCCESS
+          - REMOTE_TOOLS_START_TYPE_CHANGE_FAILED
+          - REMOTE_TOOLS_PROCESS_CONTROL_INITIATED
+          - REMOTE_TOOLS_SET_PROCESS_PRIORITY_SUCESS
+          - REMOTE_TOOLS_SET_PROCESS_PRIORITY_FAILED
+          - REMOTE_TOOLS_TERMINATE_PROCESS_SUCCESS
+          - REMOTE_TOOLS_TERMINATE_PROCESS_FAILED
+          - REMOTE_TOOLS_TERMINATE_PROCESS_TREE_SUCCESS
+          - REMOTE_TOOLS_TERMINATE_PROCESS_TREE_FAILED
+          - REMOTE_TOOLS_REGISTRY_CONTROL_INITIATED
+          - REMOTE_TOOLS_CREATE_KEY_SUCCESS
+          - REMOTE_TOOLS_CREATE_KEY_FAILED
+          - REMOTE_TOOLS_RENAME_KEY_SUCCESS
+          - REMOTE_TOOLS_RENAME_KEY_FAILED
+          - REMOTE_TOOLS_DELETE_KEY_SUCCESS
+          - REMOTE_TOOLS_DELETE_KEY_FAILED
+          - REMOTE_TOOLS_CREATE_PARAMETER_SUCCESS
+          - REMOTE_TOOLS_CREATE_PARAMETER_FAILED
+          - REMOTE_TOOLS_RENAME_PARAMETER_SUCCESS
+          - REMOTE_TOOLS_RENAME_PARAMETER_FAILED
+          - REMOTE_TOOLS_DELETE_PARAMETER_SUCCESS
+          - REMOTE_TOOLS_DELETE_PARAMETER_FAILED
+          - REMOTE_TOOLS_MODIFY_PARAMETER_SUCCESS
+          - REMOTE_TOOLS_MODIFY_PARAMETER_FAILED
+          - API_ACCESS_GRANTED
+          - API_ACCESS_DENIED
+          - API_WEBHOOK_CONFIGURATION_UPDATED
+          - API_ACCESS_REVOKED
+          - UNKNOWN
+        status:
+          type: string
+          description: Status description
+        activityResult:
+          type: string
+          description: Activity result
+          enum:
+          - SUCCESS
+          - FAILURE
+          - UNSUPPORTED
+          - UNCOMPLETED
+        sourceConfigUid:
+          type: string
+          description: Source configuration/policy element reference
+          format: uuid
+        sourceName:
+          type: string
+          description: Source configuration/policy element name
+        subject:
+          type: string
+          description: Activity subject
+        userId:
+          type: integer
+          description: User identifier
+          format: int32
+        message:
+          type: string
+          description: Activity message
+        type:
+          type: string
+          description: Activity type description
+        data:
+          type: object
+          additionalProperties: true
+        device:
+          $ref: '#/components/schemas/NodeWithDetailedReferences'
+    Location:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Location name
+        address:
+          type: string
+          description: Address
+        description:
+          type: string
+          description: Description
+        userData:
+          type: object
+          additionalProperties: true
+        tags:
+          type: array
+          description: Tags
+          items:
+            type: string
+            description: Tags
+        fields:
+          type: object
+          additionalProperties:
+            type: object
+            description: Custom Fields
+          description: Custom Fields
+        id:
+          type: integer
+          description: Location identifier
+          format: int32
+      description: Location
+    Maintenance:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Maintenance mode status
+          enum:
+          - PENDING
+          - IN_MAINTENANCE
+          - FAILED
+        start:
+          type: integer
+          description: Maintenance mode start time
+          format: int64
+        end:
+          type: integer
+          description: Maintenance mode end time
+          format: int64
+      description: Maintenance mode status
+    NodeReferences:
+      type: object
+      properties:
+        organization:
+          $ref: '#/components/schemas/Organization'
+        location:
+          $ref: '#/components/schemas/Location'
+        rolePolicy:
+          $ref: '#/components/schemas/Policy'
+        policy:
+          $ref: '#/components/schemas/Policy'
+        role:
+          $ref: '#/components/schemas/NodeRole'
+      description: Expanded entity references
+    NodeRole:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Device Role identifier
+          format: int32
+        name:
+          type: string
+          description: Name
+        description:
+          type: string
+          description: Description
+        nodeClass:
+          type: string
+          description: Node Class
+          enum:
+          - WINDOWS_SERVER
+          - WINDOWS_WORKSTATION
+          - LINUX_WORKSTATION
+          - MAC
+          - VMWARE_VM_HOST
+          - VMWARE_VM_GUEST
+          - LINUX_SERVER
+          - MAC_SERVER
+          - CLOUD_MONITOR_TARGET
+          - NMS_SWITCH
+          - NMS_ROUTER
+          - NMS_FIREWALL
+          - NMS_PRIVATE_NETWORK_GATEWAY
+          - NMS_PRINTER
+          - NMS_SCANNER
+          - NMS_DIAL_MANAGER
+          - NMS_WAP
+          - NMS_IPSLA
+          - NMS_COMPUTER
+          - NMS_VM_HOST
+          - NMS_APPLIANCE
+          - NMS_OTHER
+          - NMS_SERVER
+          - NMS_PHONE
+          - NMS_VIRTUAL_MACHINE
+          - NMS_NETWORK_MANAGEMENT_AGENT
+        custom:
+          type: boolean
+          description: Is custom node role?
+        chassisType:
+          type: string
+          description: Chassis Type
+          enum:
+          - UNKNOWN
+          - DESKTOP
+          - LAPTOP
+        created:
+          type: integer
+          description: Date created
+          format: int64
+        tags:
+          type: array
+          description: Tags
+          items:
+            type: string
+            description: Tags
+        fields:
+          type: object
+          additionalProperties:
+            type: object
+            description: Custom Fields
+          description: Custom Fields
+      description: Device Role
+    NodeWithDetailedReferences:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Node (Device) identifier
+          format: int32
+        parentDeviceId:
+          type: integer
+          description: Parent Node identifier
+          format: int32
+        organizationId:
+          type: integer
+          description: Organization identifier
+          format: int32
+        locationId:
+          type: integer
+          description: Location identifier
+          format: int32
+        nodeClass:
+          type: string
+          description: Node Class
+          enum:
+          - WINDOWS_SERVER
+          - WINDOWS_WORKSTATION
+          - LINUX_WORKSTATION
+          - MAC
+          - VMWARE_VM_HOST
+          - VMWARE_VM_GUEST
+          - LINUX_SERVER
+          - MAC_SERVER
+          - CLOUD_MONITOR_TARGET
+          - NMS_SWITCH
+          - NMS_ROUTER
+          - NMS_FIREWALL
+          - NMS_PRIVATE_NETWORK_GATEWAY
+          - NMS_PRINTER
+          - NMS_SCANNER
+          - NMS_DIAL_MANAGER
+          - NMS_WAP
+          - NMS_IPSLA
+          - NMS_COMPUTER
+          - NMS_VM_HOST
+          - NMS_APPLIANCE
+          - NMS_OTHER
+          - NMS_SERVER
+          - NMS_PHONE
+          - NMS_VIRTUAL_MACHINE
+          - NMS_NETWORK_MANAGEMENT_AGENT
+        nodeRoleId:
+          type: integer
+          description: Node Role identifier
+          format: int32
+        rolePolicyId:
+          type: integer
+          description: Node Role policy ID based on organization Policy Mapping
+          format: int32
+        policyId:
+          type: integer
+          description: Assigned policy ID (overrides organization policy mapping)
+          format: int32
+        approvalStatus:
+          type: string
+          description: Approval Status
+          enum:
+          - PENDING
+          - APPROVED
+        offline:
+          type: boolean
+          description: Is Offline?
+        displayName:
+          type: string
+          description: Display Name
+        systemName:
+          type: string
+          description: System Name
+        dnsName:
+          type: string
+          description: DNS Name
+        netbiosName:
+          type: string
+          description: NETBIOS Name
+        created:
+          type: integer
+          description: Created
+          format: int64
+        lastContact:
+          type: integer
+          description: Last Contact
+          format: int64
+        lastUpdate:
+          type: integer
+          description: Last data submission timestamp
+          format: int64
+        userData:
+          type: object
+          additionalProperties: true
+        tags:
+          type: array
+          description: Tags
+          items:
+            type: string
+            description: Tags
+        fields:
+          type: object
+          additionalProperties:
+            type: object
+            description: Custom Fields
+          description: Custom Fields
+        maintenance:
+          $ref: '#/components/schemas/Maintenance'
+        references:
+          $ref: '#/components/schemas/NodeReferences'
+    Organization:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Organization full name
+        description:
+          type: string
+          description: Organization Description
+        userData:
+          type: object
+          additionalProperties: true
+        nodeApprovalMode:
+          type: string
+          description: Device Approval Mode
+          enum:
+          - AUTOMATIC
+          - MANUAL
+          - REJECT
+        tags:
+          type: array
+          description: Tags
+          items:
+            type: string
+            description: Tags
+        fields:
+          type: object
+          additionalProperties:
+            type: object
+            description: Custom Fields
+          description: Custom Fields
+        id:
+          type: integer
+          description: Organization identifier
+          format: int32
+      description: Organization
+    Policy:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Policy identifier
+          format: int32
+        parentPolicyId:
+          type: integer
+          description: Parent Policy identifier
+          format: int32
+        name:
+          type: string
+          description: Name
+        description:
+          type: string
+          description: Description
+        nodeClass:
+          type: string
+          description: Node Class
+          enum:
+          - WINDOWS_SERVER
+          - WINDOWS_WORKSTATION
+          - LINUX_WORKSTATION
+          - MAC
+          - VMWARE_VM_HOST
+          - VMWARE_VM_GUEST
+          - LINUX_SERVER
+          - MAC_SERVER
+          - CLOUD_MONITOR_TARGET
+          - NMS_SWITCH
+          - NMS_ROUTER
+          - NMS_FIREWALL
+          - NMS_PRIVATE_NETWORK_GATEWAY
+          - NMS_PRINTER
+          - NMS_SCANNER
+          - NMS_DIAL_MANAGER
+          - NMS_WAP
+          - NMS_IPSLA
+          - NMS_COMPUTER
+          - NMS_VM_HOST
+          - NMS_APPLIANCE
+          - NMS_OTHER
+          - NMS_SERVER
+          - NMS_PHONE
+          - NMS_VIRTUAL_MACHINE
+          - NMS_NETWORK_MANAGEMENT_AGENT
+        updated:
+          type: integer
+          description: Last update timestamp
+          format: int64
+        nodeClassDefault:
+          type: boolean
+          description: Is Default Policy for Node Class
+        tags:
+          type: array
+          description: Tags
+          items:
+            type: string
+            description: Tags
+        fields:
+          type: object
+          additionalProperties:
+            type: object
+            description: Custom Fields
+          description: Custom Fields
+      description: Assigned policy ID (overrides organization policy mapping)
+
