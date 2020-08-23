@@ -41,6 +41,8 @@ The `pm-ninja-pre-request` script retrieves the key variables and constructs the
 
 The script includes comments that should give enough details for each step used in construct & sign the request signature needed. The Ninja resource that provides the example code for signing requests can be found the ref's below.
 
+If this helps, 
+<a href="https://www.buymeacoffee.com/jwstott" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
 
 ## Ref's
 [Ninja API Authentication](https://www.ninjarmm.com/dev-api/)  
