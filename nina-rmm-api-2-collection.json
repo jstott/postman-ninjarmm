@@ -5793,26 +5793,27 @@
 					"* @author J. Stott <jwstott@gmail.com>",
 					"*/",
 					"",
-					"var CryptoJS = require(\"crypto-js\");",
+					"//let CryptoJS = require(\"crypto-js\"); // already defined",
 					"",
 					"// capture Ninja access tokens - set at environment, collection, or global",
-					"var privateKey = pm.variables.get(\"ninja_accessKeyId\") ;",
-					"var secretAccessKey = pm.variables.get(\"ninja_secretAccessKey\");",
+					"let privateKey = pm.variables.get(\"ninja_accessKeyId\") ;",
+					"let secretAccessKey = pm.variables.get(\"ninja_secretAccessKey\");",
 					"",
 					"// capture selected element of the request",
-					"var reqElement = {",
-					"    canonicalPath: '/' + pm.request.url.path.join('/'),",
+					"let reqElement = {",
+					"    canonicalPath: pm.request.url.getPath(),",
 					"    method: pm.request.method.toUpperCase(),",
 					"    contentMd5: '',",
 					"    contentType: '',",
 					"    date: new Date().toUTCString(),",
 					"}",
 					"",
+					"",
 					"// From the selected request element above, form a base64 encoded string",
-					"var encodedRequest = getEncodedRequest(reqElement);",
+					"let encodedRequest = getEncodedRequest(reqElement);",
 					"",
 					"// Use your API secret access key to calculate the HMAC of the derived signedString",
-					"var signature = getSignedSignature(secretAccessKey,encodedRequest);",
+					"let signature = getSignedSignature(secretAccessKey,encodedRequest);",
 					"//console.log('signature', signature);",
 					"",
 					"// Construct the signature with your privateKey",
@@ -5829,7 +5830,7 @@
 					" * Construct aand encoded a request signature",
 					" */",
 					"function getEncodedRequest(element) {",
-					"    var sendString = [element.method, element.contentMD5,element.contentType,element.date,element.canonicalPath].join('\\n');",
+					"    let sendString = [element.method, element.contentMD5,element.contentType,element.date,element.canonicalPath].join('\\n');",
 					"    return Buffer.from(sendString).toString('base64')",
 					"}",
 					" ",
@@ -5837,7 +5838,7 @@
 					" * Sign a request signature",
 					" */",
 					"function getSignedSignature(secretAccessKey, encodedSignature) {",
-					"    var signed = CryptoJS.HmacSHA1(encodedSignature, secretAccessKey);",
+					"    let signed = CryptoJS.HmacSHA1(encodedSignature, secretAccessKey);",
 					"    return signed.toString(CryptoJS.enc.Base64);",
 					"}"
 				]
@@ -5856,17 +5857,17 @@
 	],
 	"variable": [
 		{
-			"id": "f4ac889e-3e45-48c6-9318-a871201ac3ba",
+			"id": "d3c0331e-7485-4024-93b7-752dea788729",
 			"key": "baseUrl",
 			"value": "https://app.ninjarmm.com/"
 		},
 		{
-			"id": "1e8dd6ae-8365-41dc-a608-b60c77397cb2",
+			"id": "e2103ac7-78d4-463d-baf5-8f02911ffd73",
 			"key": "ninja_accessKeyId",
 			"value": "TF4STGMDR4H7AEXAMPLE"
 		},
 		{
-			"id": "8b0f7ec8-4a9f-4b2e-9597-6d434fb80ba9",
+			"id": "bc59e066-3891-45aa-95d4-e63bd3586a1d",
 			"key": "ninja_secretAccessKey",
 			"value": "eh14c4ngchhu6283he03j6o7ar2fcuca0example"
 		}

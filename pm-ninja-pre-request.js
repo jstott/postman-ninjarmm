@@ -19,26 +19,27 @@
 * @author J. Stott <jwstott@gmail.com>
 */
 
-var CryptoJS = require("crypto-js");
+//let CryptoJS = require("crypto-js"); // already defined
 
 // capture Ninja access tokens - set at environment, collection, or global
-var privateKey = pm.variables.get("ninja_accessKeyId") ;
-var secretAccessKey = pm.variables.get("ninja_secretAccessKey");
+let privateKey = pm.variables.get("ninja_accessKeyId") ;
+let secretAccessKey = pm.variables.get("ninja_secretAccessKey");
 
 // capture selected element of the request
-var reqElement = {
-    canonicalPath: '/' + pm.request.url.path.join('/'),
+let reqElement = {
+    canonicalPath: pm.request.url.getPath(),
     method: pm.request.method.toUpperCase(),
     contentMd5: '',
     contentType: '',
     date: new Date().toUTCString(),
 }
 
+
 // From the selected request element above, form a base64 encoded string
-var encodedRequest = getEncodedRequest(reqElement);
+let encodedRequest = getEncodedRequest(reqElement);
 
 // Use your API secret access key to calculate the HMAC of the derived signedString
-var signature = getSignedSignature(secretAccessKey,encodedRequest);
+let signature = getSignedSignature(secretAccessKey,encodedRequest);
 //console.log('signature', signature);
 
 // Construct the signature with your privateKey
@@ -52,10 +53,10 @@ pm.request.headers.upsert({key: 'x-nj-date', value: reqElement.date});
 //console.log('pre-request authorization completed');
 
 /**
- * Construct and encoded a request signature
+ * Construct aand encoded a request signature
  */
 function getEncodedRequest(element) {
-    var sendString = [element.method, element.contentMD5,element.contentType,element.date,element.canonicalPath].join('\n');
+    let sendString = [element.method, element.contentMD5,element.contentType,element.date,element.canonicalPath].join('\n');
     return Buffer.from(sendString).toString('base64')
 }
  
@@ -63,6 +64,6 @@ function getEncodedRequest(element) {
  * Sign a request signature
  */
 function getSignedSignature(secretAccessKey, encodedSignature) {
-    var signed = CryptoJS.HmacSHA1(encodedSignature, secretAccessKey);
+    let signed = CryptoJS.HmacSHA1(encodedSignature, secretAccessKey);
     return signed.toString(CryptoJS.enc.Base64);
 }
